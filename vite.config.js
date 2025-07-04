@@ -12,7 +12,7 @@ export default defineConfig({
       manifest: {
         name: 'KnowUrFood',
         short_name: 'KnowUrFood',
-        start_url: '/',
+        start_url: '/knowurfood',
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#000000',
