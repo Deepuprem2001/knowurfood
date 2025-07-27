@@ -4,8 +4,8 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-function NutritionDonutChart({ meals }) {
-  const today = new Date().toISOString().split('T')[0];
+function NutritionDonutChart({ meals, selectedDate }) {
+  const today = selectedDate || new Date().toISOString().split('T')[0];
   const mealsToday = meals.filter(meal => meal.date === today);
 
   const totals = {};
@@ -27,12 +27,20 @@ function NutritionDonutChart({ meals }) {
     .filter(([key]) => !["Protein", "Fat", "Carbohydrate", "Carbs as Sugar"].includes(key))
     .reduce((sum, [, val]) => sum + val, 0);
 
+  // Only include nutrients with non-zero values
+  const entries = [];
+  if (protein > 0) entries.push({ label: 'Protein', value: protein, color: '#4CAF50' });
+  if (fat > 0)     entries.push({ label: 'Fat', value: fat, color: '#FF9800' });
+  if (carbs > 0)   entries.push({ label: 'Carbohydrate', value: carbs, color: '#03A9F4' });
+  if (sugar > 0)   entries.push({ label: 'Carbs as Sugar', value: sugar, color: 'teal' });
+  if (others > 0)  entries.push({ label: 'Others', value: others, color: 'gray' });
+
   const data = {
-    labels: ['Protein', 'Fat', 'Carbohydrate', 'Carbs as Sugar', 'Others'],
+    labels: entries.map(e => e.label),
     datasets: [
       {
-        data: [protein, fat, carbs, sugar, others],
-        backgroundColor: ['#4CAF50', '#FF9800', '#03A9F4', 'teal', 'gray'],
+        data: entries.map(e => e.value),
+        backgroundColor: entries.map(e => e.color),
         borderWidth: 0,
       },
     ],
@@ -61,14 +69,11 @@ function NutritionDonutChart({ meals }) {
     },
   };
 
-  const totalGrams = protein + fat + carbs + sugar + others;
 
   return (
     <div className="donut-chart" style={{ position: 'relative' }}>
       <Doughnut data={data} options={options} />
-      <div className='DonutWordings'>
-        {totalGrams}g
-      </div>
+
     </div>
   );
 }

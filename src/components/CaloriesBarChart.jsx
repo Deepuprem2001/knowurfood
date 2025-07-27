@@ -1,19 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale } from 'chart.js';
 
 ChartJS.register(BarElement, CategoryScale, LinearScale);
 
-function CaloriesBarChart({ meals }) {
-  const getMonday = (date) => {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(d.setDate(diff));
-  };
-
-  const [startOfWeek, setStartOfWeek] = useState(getMonday(new Date()));
-
+function CaloriesBarChart({ meals, startOfWeek }) {
   const getWeekDates = () => {
     const days = [];
     for (let i = 0; i < 7; i++) {
@@ -49,7 +40,7 @@ function CaloriesBarChart({ meals }) {
       {
         label: 'Calories',
         data: getCaloriesForWeek(),
-        backgroundColor: '#4CAF50',
+        backgroundColor: 'deepskyblue',
       },
     ],
   };
@@ -71,38 +62,7 @@ function CaloriesBarChart({ meals }) {
     },
   };
 
-  // Format date as dd/mm/yyyy
-  const formatDate = (date) => {
-    const d = new Date(date);
-    return d.toLocaleDateString('en-GB');
-  };
-
-  const handleWeekShift = (days) => {
-    const newStart = new Date(startOfWeek);
-    newStart.setDate(startOfWeek.getDate() + days);
-    setStartOfWeek(newStart);
-  };
-
-  return (
-    <div>
-      <div className="d-flex align-items-center justify-content-center text-warning fw-bold mb-3">
-        <span
-          style={{ cursor: 'pointer', marginRight: '10px' }}
-          onClick={() => handleWeekShift(-7)}
-        >
-          ◀️
-        </span>
-        {formatDate(startOfWeek)} – {formatDate(new Date(startOfWeek.getTime() + 6 * 86400000))}
-        <span
-          style={{ cursor: 'pointer', marginLeft: '10px' }}
-          onClick={() => handleWeekShift(7)}
-        >
-          ▶️
-        </span>
-      </div>
-      <Bar data={data} options={options} />
-    </div>
-  );
+  return <Bar data={data} options={options} />;
 }
 
 export default CaloriesBarChart;

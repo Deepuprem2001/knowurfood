@@ -4,9 +4,8 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-function CalorieDonutChart({ meals }) {
-  const today = new Date().toISOString().split('T')[0];
-
+function CalorieDonutChart({ meals, selectedDate, goal = 2000 }) {
+  const today = selectedDate || new Date().toISOString().split('T')[0];
   const mealsToday = meals.filter(meal => meal.date === today);
 
   const caloriesToday = mealsToday.reduce((total, meal) => {
@@ -20,14 +19,14 @@ function CalorieDonutChart({ meals }) {
     return total;
   }, 0);
 
-  const remaining = 2000 - caloriesToday;
+  const remaining = goal - caloriesToday;
 
   const data = {
     labels: ['Calories Consumed'],
     datasets: [
       {
         data: [caloriesToday, remaining > 0 ? remaining : 0],
-        backgroundColor: ['aqua', '#00ffff65'],
+        backgroundColor: ['deepskyblue', '#a9c9f8ff'],
         borderWidth: 0,
       },
     ],
@@ -42,12 +41,12 @@ function CalorieDonutChart({ meals }) {
         labels: {
           color: 'white',
           font: {
-            size: 8,
+            size: 12,
             weight: 'bold',
           },
           padding: 15,
-          boxWidth: 5,
-          boxHeight: 5,
+          boxWidth: 10,
+          boxHeight: 10,
         },
       },
     },

@@ -1,7 +1,6 @@
 import React from 'react';
 
-function MealCard({ name, nutrients, onEdit, onDelete }) {
-  // Calculate estimated calories per item
+function MealCard({ name, nutrients, onEdit, onDelete, unit = 'g' }) {
   const getCalories = () => {
     let total = 0;
     nutrients.forEach(n => {
@@ -12,22 +11,7 @@ function MealCard({ name, nutrients, onEdit, onDelete }) {
     return Math.round(total);
   };
 
-  // Function to determine unit (for display)
-  const getUnit = (type) => {
-    const typesWithG = [
-      "Protein",
-      "Fat",
-      "Carbohydrate",
-      "Carbs as Sugar",
-      "Fibre",
-      "Salt"
-    ];
-    return typesWithG.includes(type) ? "g" : "";
-  };
-
-  // Capitalize function
-  const capitalize = (str) =>
-    str.charAt(0).toUpperCase() + str.slice(1);
+  const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
   return (
     <div className="meal-card">
@@ -35,11 +19,13 @@ function MealCard({ name, nutrients, onEdit, onDelete }) {
       <p className='MealCardText'>Calories: {getCalories()} kcal</p>
       {nutrients.map((n, i) => (
         <p key={i} className='MealCardText'>
-          {capitalize(n.type)}: {n.total} {getUnit(n.type)}
+          {capitalize(n.type)}: {n.total} {unit}
         </p>
       ))}
-      <button className="btn btn-sm mt-2" onClick={onEdit}>Edit</button>
-      <button className="btn btn-sm mt-2" onClick={onDelete}>Delete</button>
+      <div className='d-flex' style={{ justifyContent: 'end' }}>
+        <button className="btn btn-warning btn-sm m-2 mb-0" onClick={onEdit}>Edit</button>
+        <button className="btn btn-danger btn-sm m-2 mb-0" onClick={onDelete}>Delete</button>
+      </div>
     </div>
   );
 }

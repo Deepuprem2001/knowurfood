@@ -1,7 +1,6 @@
 body {
   font-family: Arial, sans-serif;
   background-color: #333333;
-  padding: 20px;
 }
 
 .navbar {
@@ -9,14 +8,15 @@ body {
   justify-content: space-around;
   background-color: #212121;
   border-radius: 10px;
+  margin: 0px 15px 0px 15px;
 }
 
 .navbar button {
-  color: aqua;
-  background: none;
+  color: deepskyblue;
   border: none;
-  font-size: 12px;
+  font-size: 16px;
   padding: 5px;
+  background: none;
 }
 
 .home-container {
@@ -24,6 +24,7 @@ body {
     overflow: auto;
     margin: 10px 0 10px 0;
     border-radius: 10px;
+    padding: 15px 15px 0 15px;
 }
 
 .meal-card {
@@ -35,15 +36,15 @@ body {
 }
 
 .TitleName {
-  color: aqua;
+  color: deepskyblue;
   font-size: 20px;
   font-weight: bold;
 }
 
 .SubTitleName {
-    color: yellow;
+    color: white;
     margin: 5px 0px 5px 0px;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: bold;
     margin-bottom: 15px;
 }
@@ -78,10 +79,10 @@ body {
 
 .DonutWordings {
     position: absolute;
-    top: 40%;
+    top: 37%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 8px;
+    font-size: 12px;
     font-weight: bold;
     color: white;
     text-align: center;
@@ -129,7 +130,7 @@ body {
   width: 90%;
   max-width: 90%;
   background-color: #1c1c1c;
-  border: 2px solid yellow;
+  border: 2px solid deepskyblue;
   padding: 15px;
   border-radius: 10px;
   color: white;
@@ -147,7 +148,6 @@ body {
 }
 
 .btn-save {
-  background-color: aqua;
   padding: 5 15 5 15;
   border: none;
   color: white;
@@ -156,7 +156,6 @@ body {
 }
 
 .btn-exit {
-  background-color: goldenrod;
   padding: 5 15 5 15;
   border: none;
   color: white;
@@ -164,15 +163,14 @@ body {
 }
 
 .btn-manual {
-  background-color: aqua;
   padding: 5 15 5 15;
+  margin-right: 5%;
   border: none;
   color: white;
   border-radius: 5px;
 }
 
 .btn-scan {
-  background-color: aqua;
   padding: 5 15 5 15;
   border: none;
   color: white;
@@ -180,7 +178,7 @@ body {
 }
 
 .ModelTitleName {
-    color: yellow;
+    color: white;
     margin: 5px 0px 5px 0px;
     font-size: 14px;
     font-weight: bold;
@@ -188,20 +186,21 @@ body {
 }
 
 .DropDownMeal {
-  width: 55%;
-  font-size: 12px;
+    width: 55%;
+    font-size: 14px;
+    height: min-content;
 }
 
 .manual-scan-buttons {
-  justify-content: space-between;
+  justify-content: center;
   display: flex;
 }
 
 .food-section {
-    margin-top: 2%;
-    background-color: #00000025;
-    padding: 5px;
-    border-radius: 10px;
+  margin-top: 5%;
+  background-color: #00000025;
+  padding: 10px;
+  border-radius: 10px;
 }
 
 .FoodNameSection {
@@ -211,7 +210,7 @@ body {
 }
 
 .FoodName {
-  color: yellow;
+  color: white;
   margin: 5px 0px 5px 5px;
   margin-right: 5% !important;
   font-size: 14px;
@@ -220,7 +219,7 @@ body {
 
 .FoodNameTextArea {
     resize: block;
-    width: 100%;
+    width: 65%;
     height: 24px;
 }
 
@@ -239,7 +238,7 @@ body {
     display: block;
     width: 100%;
     padding: 5px;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 400;
     line-height: 1.5;
     color: var(--bs-body-color);
@@ -262,7 +261,7 @@ body {
     display: block;
     width: 100%;
     padding: 5px;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 400;
     line-height: 1.5;
     color: var(--bs-body-color);
@@ -297,13 +296,18 @@ body {
 }
 
 .AddItemButton {
-    font-size: 10px;
+    font-size: 12px;
     width: 90%;
     margin: 0 5%;
-    border: none;
+    border: 2px solid deepskyblue;
     background-color: #3b3b3b;
     border-radius: 5px;
-    color: aqua;
-    font-weight: bolder;
+    color: white;
+    padding: 3px;
 }
 
+.DateRangePicker {
+    font-size: 10px;
+    color: deepskyblue !important;
+    font-weight: bold;
+}

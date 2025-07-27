@@ -11,7 +11,7 @@ const dbPromise = openDB(DB_NAME, DB_VERSION, {
     }
 
     if (!db.objectStoreNames.contains('users')) {
-      db.createObjectStore('users', { keyPath: 'username'});
+      db.createObjectStore('users', { keyPath: 'username' });
     }
 
     if (!db.objectStoreNames.contains('session')) {
@@ -56,7 +56,16 @@ export const updateMeal = async (mealData) => {
 // 👤 USERS
 // =========================
 
-export const registerUser = async ({ username, password }) => {
+export const registerUser = async ({
+  username,
+  password,
+  firstName,
+  lastName,
+  calorieGoal,
+  mealOrder,
+  unit,
+  darkMode
+}) => {
   const db = await dbPromise;
 
   const existingUsers = await db.getAll(USER_STORE);
@@ -67,13 +76,20 @@ export const registerUser = async ({ username, password }) => {
   }
 
   const passwordHash = btoa(password); // ✅ Encode password
-  const user = { username, passwordHash };
+  const user = {
+    username,
+    passwordHash,
+    firstName,
+    lastName,
+    calorieGoal,
+    mealOrder: mealOrder.split(','), // Convert string to array
+    unit,
+    darkMode
+  };
 
   await db.add(USER_STORE, user);
   return user;
 };
-
-
 
 export const loginUser = async ({ username, password }) => {
   const db = await dbPromise;

@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
-import Home from './components/Home';
+import Dashboard from './components/Home'; 
+import HistoryTab from './components/HistoryTab';
 import AddMealModal from './components/AddMeal';
 import AuthPage from './components/AuthPage';
+import ProfileTab from './components/ProfileTab'; 
+import SuggestionsTab from './components/SuggestionsTab';
+
 import './App.css';
 
 import {
@@ -17,12 +21,12 @@ import {
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [meals, setMeals] = useState([]);
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [showModel, setShowModel] = useState(false);
   const [editMealData, setEditMealData] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [mealToDelete, setMealToDelete] = useState(null);
 
-  // Load user session + meals on first render
   useEffect(() => {
     const loadUserAndMeals = async () => {
       const user = await getCurrentUser();
@@ -78,24 +82,56 @@ function App() {
 
   return (
     <>
-      <Home
-        meals={meals}
-        onEditMeal={(meal) => {
-          setEditMealData(meal);
-          setShowModel(true);
-        }}
-        onDeleteMeal={(id) => {
-          setMealToDelete(id);
-          setShowDeleteModal(true);
-        }}
-        setShowDeleteModal={setShowDeleteModal}
-        setMealToDelete={setMealToDelete}
-      />
+      {activeTab === 'dashboard' && (
+        <Dashboard
+          user={currentUser}
+          meals={meals}
+          onEditMeal={(meal) => {
+            setEditMealData(meal);
+            setShowModel(true);
+          }}
+          onDeleteMeal={(id) => {
+            setMealToDelete(id);
+            setShowDeleteModal(true);
+          }}
+        />
+      )}
+
+      {activeTab === 'history' && (
+        <HistoryTab
+          meals={meals}
+          onEditMeal={(meal) => {
+            setEditMealData(meal);
+            setShowModel(true);
+          }}
+          onDeleteMeal={(id) => {
+            setMealToDelete(id);
+            setShowDeleteModal(true);
+          }}
+        />
+      )}
+
+      {activeTab === 'suggestions' && <SuggestionsTab meals={meals} user={currentUser} />}
+
+      {activeTab === 'profile' && (
+        <ProfileTab
+          user={currentUser}
+          meals={meals}
+          onLogout={handleLogout}
+          clearAllMeals={() => {
+            localStorage.removeItem('meals');
+            setMeals([]);
+          }}
+        />
+      )}
+
       <Navbar
         onAddClick={() => setShowModel(true)}
         onLogout={handleLogout}
-        username={currentUser.username}
+        onTabChange={(tab) => setActiveTab(tab)}
+        currentTab={activeTab}
       />
+
       <AddMealModal
         isOpen={showModel}
         onClose={() => {
@@ -105,6 +141,7 @@ function App() {
         onSave={handleSaveMeal}
         editMeal={editMealData}
       />
+
       {showDeleteModal && (
         <div className="modal-backdrop">
           <div className="modal-container p-4 text-center">
