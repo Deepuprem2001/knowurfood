@@ -6,6 +6,8 @@ import AddMealModal from './components/AddMeal';
 import AuthPage from './components/AuthPage';
 import ProfileTab from './components/ProfileTab'; 
 import SuggestionsTab from './components/SuggestionsTab';
+import { deleteAllMeals } from './services/dbService';
+import logo from '../src/assets/Logo.png';
 
 import './App.css';
 
@@ -26,58 +28,79 @@ function App() {
   const [editMealData, setEditMealData] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [mealToDelete, setMealToDelete] = useState(null);
+  const [toastMessage, setToastMessage] = useState('');
+  const [showToast, setShowToast] = useState(false);
+  const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
-    const loadUserAndMeals = async () => {
-      const user = await getCurrentUser();
-      if (user) {
-        setCurrentUser(user);
-        const data = await getAllMeals();
-        setMeals(data);
-      }
-    };
+      setTimeout(() => setLoading(false), 1500); // 1.5s splash
+
+  const loadUserAndMeals = async () => {
+    const user = await getCurrentUser();
+    if (user) {
+      setCurrentUser(user);
+      const data = await getAllMeals(user.uid);
+      setMeals(data);
+    }
+  };
+
     loadUserAndMeals();
   }, []);
 
-  const handleLoginSuccess = async (user) => {
-    setCurrentUser(user);
-    const data = await getAllMeals();
-    setMeals(data);
-  };
+const handleLoginSuccess = async (user) => {
+  setCurrentUser(user);
+  const data = await getAllMeals(user.uid);
+  setMeals(data);
+};
 
-  const handleSaveMeal = async (mealData) => {
-    if (!currentUser) return;
-    const fullData = { ...mealData, userId: currentUser.id };
+const handleSaveMeal = async (mealData) => {
+  if (!currentUser) return;
+  const fullData = { ...mealData, userId: currentUser.uid };
 
-    if (editMealData) {
-      await updateMeal({ ...fullData, id: editMealData.id });
-      const updated = meals.map((m) =>
-        m.id === editMealData.id ? { ...fullData, id: editMealData.id } : m
-      );
-      setMeals(updated);
-      setEditMealData(null);
-    } else {
-      await addMeal(fullData);
-      const all = await getAllMeals();
-      setMeals(all);
-    }
-    setShowModel(false);
-  };
-
-  const handleDeleteMeal = async (id) => {
-    await deleteMeal(id);
-    const updated = meals.filter((m) => m.id !== id);
+  if (editMealData) {
+    await updateMeal({ ...fullData, id: editMealData.id }, currentUser.uid);
+    const updated = meals.map((m) =>
+      m.id === editMealData.id ? { ...fullData, id: editMealData.id } : m
+    );
     setMeals(updated);
-  };
+    setEditMealData(null);
+  } else {
+    await addMeal(fullData, currentUser.uid);
+    setToastMessage('+10 XP! 🎉');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+    const all = await getAllMeals(currentUser.uid);
+    const updatedUser = await getCurrentUser(); // 🔁 Refresh user profile
+    setMeals(all);
+    setCurrentUser(updatedUser); // ✅ Triggers XP/level bar update
 
-  const handleLogout = async () => {
-    await logoutUser();
-    setCurrentUser(null);
-    setMeals([]);
-  };
+      }
+  setShowModel(false);
+};
+
+const handleDeleteMeal = async (id) => {
+  await deleteMeal(id, currentUser.uid);
+  const updated = meals.filter((m) => m.id !== id);
+  setMeals(updated);
+};
+
+const handleLogout = async () => {
+  await logoutUser();
+  setCurrentUser(null);
+  setMeals([]);
+};
 
   if (!currentUser) {
     return <AuthPage onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100 bg-black">
+        <img src={logo} alt="Logo" style={{ width: '150px', height: '150px' }} />
+      </div>
+    );
   }
 
   return (
@@ -118,10 +141,10 @@ function App() {
           user={currentUser}
           meals={meals}
           onLogout={handleLogout}
-          clearAllMeals={() => {
-            localStorage.removeItem('meals');
-            setMeals([]);
-          }}
+          clearAllMeals={async () => {
+              await deleteAllMeals(currentUser.uid); // Firestore cleanup
+              setMeals([]);                          // App state reset
+            }}
         />
       )}
 
@@ -166,6 +189,15 @@ function App() {
           </div>
         </div>
       )}
+
+    {showToast && (
+      <div className="toast-container position-fixed bottom-0 end-0 p-3" style={{ zIndex: 9999 }}>
+        <div className="toast show bg-success text-white">
+          <div className="toast-body fw-bold">{toastMessage}</div>
+        </div>
+      </div>
+    )}
+
     </>
   );
 }

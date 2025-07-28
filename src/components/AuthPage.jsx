@@ -2,16 +2,18 @@ import React, { useState } from 'react';
 import {
   loginUser,
   registerUser,
-  setCurrentUser,
+  getCurrentUser
 } from '../services/dbService';
+
 import '../App.css';
 import '../css/AuthPage.css';
-import logo from '../../public/vite.svg';
+import logo from '../../src/assets/Logo.png';
 
 function AuthPage({ onLoginSuccess }) {
   const [mode, setMode] = useState('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [calorieGoal, setCalorieGoal] = useState(2000);
@@ -21,25 +23,50 @@ function AuthPage({ onLoginSuccess }) {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  const resetFields = () => {
+    setUsername('');
+    setPassword('');
+    setConfirmPassword('');
+    setFirstName('');
+    setLastName('');
+    setCalorieGoal(2000);
+    setMealOrder('Breakfast,Lunch,Dinner');
+    setUnit('g');
+    setDarkMode(false);
+    setError('');
+  };
+
+  const handleModeSwitch = () => {
+    setMode((prev) => (prev === 'login' ? 'register' : 'login'));
+    resetFields();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    try {
-      const user =
-        mode === 'register'
-          ? await registerUser({
-              username,
-              password,
-              firstName,
-              lastName,
-              calorieGoal: Number(calorieGoal),
-              mealOrder,
-              unit,
-              darkMode,
-            })
-          : await loginUser({ username, password });
 
-      await setCurrentUser(user);
+    if (mode === 'register' && password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    try {
+      let user;
+      if (mode === 'register') {
+        user = await registerUser({
+          email: username,
+          password,
+          firstName,
+          lastName,
+          calorieGoal: Number(calorieGoal),
+          mealOrder: mealOrder.split(','),
+          unit,
+          darkMode
+        });
+      } else {
+        user = await loginUser({ email: username, password });
+      }
+
       onLoginSuccess(user);
     } catch (err) {
       setError(err.message);
@@ -48,21 +75,27 @@ function AuthPage({ onLoginSuccess }) {
 
   return (
     <div className="auth-container fade-slide-in">
+            <div className="text-center">
+        <img src={logo} alt="KnowUrFood Logo" style={{ width: '200px' }} />
+      </div>
       <div className="auth-box shadow rounded">
-        <img src={logo} alt="App Logo" className="auth-logo" />
-        <h1 className="app-name">KnowUrFood</h1>
         <h2 className="auth-title">{mode === 'login' ? 'LOGIN' : 'REGISTER'}</h2>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <input
-            type="email"
-            className="form-control mb-2"
-            placeholder="Email"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
+          <div className='dflex mb-2' style={{display:'flex', alignItems:'center'}}>
+            <label className="text-white" style={{marginRight:'18%', height:'fit-content'}}>Email</label>
+            <input
+              type="email"
+              className="form-control"
+              placeholder="Email"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
 
+          </div>
+        <div className='dflex mb-2' style={{display:'flex', alignItems:'center'}}>
+          <label className="text-white" style={{marginRight:'5%', height:'fit-content'}}>Password</label>
           <div className="position-relative mb-2">
             <input
               type={showPassword ? 'text' : 'password'}
@@ -78,9 +111,21 @@ function AuthPage({ onLoginSuccess }) {
               title="Toggle password"
             />
           </div>
+        </div>  
 
           {mode === 'register' && (
             <>
+              <label className="text-white">Confirm Password</label>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className="form-control mb-2"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+
+              <label className="text-white">First Name</label>
               <input
                 type="text"
                 className="form-control mb-2"
@@ -90,6 +135,7 @@ function AuthPage({ onLoginSuccess }) {
                 required
               />
 
+              <label className="text-white">Last Name</label>
               <input
                 type="text"
                 className="form-control mb-2"
@@ -99,6 +145,7 @@ function AuthPage({ onLoginSuccess }) {
                 required
               />
 
+              <label className="text-white">Daily Calorie Goal</label>
               <input
                 type="number"
                 className="form-control mb-2"
@@ -108,6 +155,7 @@ function AuthPage({ onLoginSuccess }) {
                 required
               />
 
+              <label className="text-white">Meal Order</label>
               <select
                 className="form-control mb-2"
                 value={mealOrder}
@@ -117,6 +165,7 @@ function AuthPage({ onLoginSuccess }) {
                 <option value="Dinner,Lunch,Breakfast">Dinner → Lunch → Breakfast</option>
               </select>
 
+              <label className="text-white">Preferred Unit</label>
               <select
                 className="form-control mb-2"
                 value={unit}
@@ -149,7 +198,7 @@ function AuthPage({ onLoginSuccess }) {
 
         <p className="text-white text-center">
           {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}
-          <span className="text-link" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
+          <span className="text-link" onClick={handleModeSwitch}>
             {mode === 'login' ? 'Register' : 'Login'}
           </span>
         </p>

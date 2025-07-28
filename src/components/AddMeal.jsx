@@ -193,14 +193,14 @@ const fetchNutritionByFoodName = async (name, index) => {
 
         <div className="modal-body">
           <div className="manual-scan-buttons mb-2">
-            <button className="btn btn-primary btn-sm btn-manual" onClick={() => setShowManualEntry(true)}>Manual Entry</button>
-            <button className="btn btn-primary btn-sm btn-scan" onClick={startScan}>Scan It</button>
+            <button className="btn btn-primary btn-sm btn-manual" style={{backgroundColor:'deepskyblue', borderColor:'deepskyblue'}} onClick={() => setShowManualEntry(true)}>Manual Entry</button>
+            <button className="btn btn-primary btn-sm btn-scan" style={{backgroundColor:'deepskyblue', borderColor:'deepskyblue'}} onClick={startScan}>Scan It</button>
           </div>
 
           {scanning && (
             <div className="scan-box text-center">
               <video ref={videoRef} style={{ width: '100%', maxHeight: '200px' }} />
-              <button className="btn btn-primary mt-2" onClick={captureAndScan}>Capture</button>
+              <button className="btn btn-primary mt-2" style={{backgroundColor:'deepskyblue', borderColor:'deepskyblue'}} onClick={captureAndScan}>Capture</button>
               <button className="btn btn-danger mt-2 ms-2" onClick={stopScan}>Cancel</button>
             </div>
           )}
@@ -272,7 +272,7 @@ const fetchNutritionByFoodName = async (name, index) => {
         </div>
 
         <div className="modal-footer mt-3">
-          <button className="btn btn-save btn-primary" onClick={handleSave}>Save</button>
+          <button className="btn btn-save btn-primary" style={{backgroundColor:'deepskyblue', borderColor:'deepskyblue'}} onClick={handleSave}>Save</button>
           <button className="btn btn-exit btn-danger" onClick={() => { resetModel(); onClose(); }}>Exit</button>
         </div>
       </div>

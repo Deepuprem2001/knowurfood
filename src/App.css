@@ -311,3 +311,7 @@ body {
     color: deepskyblue !important;
     font-weight: bold;
 }
+
+.form-control::placeholder {
+  color: #ffffffa6;      /* Light gray placeholder text */
+}

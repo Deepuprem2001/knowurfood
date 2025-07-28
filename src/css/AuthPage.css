@@ -1,9 +1,11 @@
 .auth-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: #121212;
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #121212;
+    align-content: center;
+    padding: 30px 0px;
 }
 
 .auth-box {
@@ -13,6 +15,7 @@
   text-align: center;
   color: white;
   animation: fadeSlide 0.6s ease-in-out;
+
 }
 
 .auth-title {

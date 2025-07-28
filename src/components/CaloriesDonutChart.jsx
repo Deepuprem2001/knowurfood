@@ -19,7 +19,8 @@ function CalorieDonutChart({ meals, selectedDate, goal = 2000 }) {
     return total;
   }, 0);
 
-  const remaining = goal - caloriesToday;
+  const roundedCalories = Math.round(caloriesToday)
+  const remaining = goal - roundedCalories;
 
   const data = {
     labels: ['Calories Consumed'],

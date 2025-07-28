@@ -1,123 +1,175 @@
-import { openDB } from 'idb';
+import { auth, db } from '../firebase';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut
+} from 'firebase/auth';
 
-const DB_NAME = 'knowurfood-db';
-const DB_VERSION = 2;
-export const USER_STORE = 'users';
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  doc,
+  updateDoc,
+  deleteDoc,
+  setDoc,
+  getDoc
+} from 'firebase/firestore';
 
-const dbPromise = openDB(DB_NAME, DB_VERSION, {
-  upgrade(db) {
-    if (!db.objectStoreNames.contains('meals')) {
-      db.createObjectStore('meals', { keyPath: 'id', autoIncrement: true });
-    }
-
-    if (!db.objectStoreNames.contains('users')) {
-      db.createObjectStore('users', { keyPath: 'username' });
-    }
-
-    if (!db.objectStoreNames.contains('session')) {
-      db.createObjectStore('session');
-    }
-  },
-});
-
-// =========================
-// 📦 MEALS
-// =========================
-
-export const addMeal = async (mealData) => {
-  const db = await dbPromise;
-  await db.add('meals', mealData);
+const calculateLevel = (xp) => {
+  return Math.floor(xp / 100) + 1; // 100 XP per level
 };
 
-export const getAllMeals = async () => {
-  const db = await dbPromise;
-  const user = await getCurrentUser();
-  if (!user) return [];
-  const all = await db.getAll('meals');
-  return all.filter((m) => m.userId === user.id);
-};
+// ========== 📦 MEALS (Nested under user) ==========
+export const addMeal = async (mealData, userId) => {
+  // 1. Add meal to Firestore
+  await addDoc(collection(db, 'users', userId, 'meals'), mealData);
 
-export const clearMeals = async () => {
-  const db = await dbPromise;
-  await db.clear('meals');
-};
+  // 2. Update user's XP and level
+  const userRef = doc(db, 'users', userId);
+  const userSnap = await getDoc(userRef);
 
-export const deleteMeal = async (id) => {
-  const db = await dbPromise;
-  await db.delete('meals', id);
-};
+  if (userSnap.exists()) {
+    const userData = userSnap.data();
+    const currentXP = userData.xp || 0;
+    const newXP = currentXP + 10; // 🥗 10 XP per meal
+    const newLevel = calculateLevel(newXP);
 
-export const updateMeal = async (mealData) => {
-  const db = await dbPromise;
-  await db.put('meals', mealData);
-};
-
-// =========================
-// 👤 USERS
-// =========================
-
-export const registerUser = async ({
-  username,
-  password,
-  firstName,
-  lastName,
-  calorieGoal,
-  mealOrder,
-  unit,
-  darkMode
-}) => {
-  const db = await dbPromise;
-
-  const existingUsers = await db.getAll(USER_STORE);
-  const userExists = existingUsers.some((u) => u.username === username);
-
-  if (userExists) {
-    throw new Error("Username already exists!");
+    await updateDoc(userRef, {
+      xp: newXP,
+      level: newLevel
+    });
   }
-
-  const passwordHash = btoa(password); // ✅ Encode password
-  const user = {
-    username,
-    passwordHash,
-    firstName,
-    lastName,
-    calorieGoal,
-    mealOrder: mealOrder.split(','), // Convert string to array
-    unit,
-    darkMode
-  };
-
-  await db.add(USER_STORE, user);
-  return user;
 };
 
-export const loginUser = async ({ username, password }) => {
-  const db = await dbPromise;
-  const users = await db.getAll(USER_STORE);
 
-  const user = users.find(
-    (u) => u.username === username && u.passwordHash === btoa(password)
-  );
-
-  if (!user) throw new Error('Invalid credentials');
-  return user;
+export const getAllMeals = async (userId) => {
+  const snapshot = await getDocs(collection(db, 'users', userId, 'meals'));
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-// =========================
-// 🔐 SESSION
-// =========================
-
-export const setCurrentUser = async (user) => {
-  const db = await dbPromise;
-  await db.put('session', user, 'currentUser');
+export const updateMeal = async (mealData, userId) => {
+  const ref = doc(db, 'users', userId, 'meals', mealData.id);
+  const { id, ...rest } = mealData;
+  await updateDoc(ref, rest);
 };
 
-export const getCurrentUser = async () => {
-  const db = await dbPromise;
-  return await db.get('session', 'currentUser');
+export const deleteMeal = async (mealId, userId) => {
+  const ref = doc(db, 'users', userId, 'meals', mealId);
+  await deleteDoc(ref);
+};
+
+export const deleteAllMeals = async (userId) => {
+  const mealsRef = collection(db, 'users', userId, 'meals');
+  const snapshot = await getDocs(mealsRef);
+  const deletions = snapshot.docs.map(doc => deleteDoc(doc.ref));
+  await Promise.all(deletions);
+};
+
+export const updateUserProfile = async (userId, updatedProfile) => {
+  const ref = doc(db, 'users', userId);
+  await updateDoc(ref, updatedProfile);
+};
+
+
+// ========== 👤 AUTH ==========
+export const registerUser = async ({ email, password, ...profile }) => {
+  const result = await createUserWithEmailAndPassword(auth, email, password);
+  const user = result.user;
+  await setDoc(doc(db, 'users', user.uid), {
+    ...profile,
+    xp: 0,
+    level: 1,
+    streak: 1,
+    lastLogin: new Date().toISOString().split('T')[0],
+    badges: []
+  });
+  return { ...user, ...profile };
+};
+
+export const loginUser = async ({ email, password }) => {
+  const result = await signInWithEmailAndPassword(auth, email, password);
+  const user = result.user;
+
+  const profileRef = doc(db, 'users', user.uid);
+  const profileSnap = await getDoc(profileRef);
+  const profile = profileSnap.exists() ? profileSnap.data() : {};
+
+  return { ...user, ...profile };
 };
 
 export const logoutUser = async () => {
-  const db = await dbPromise;
-  await db.delete('session', 'currentUser');
+  await signOut(auth);
+};
+
+export const getCurrentUser = async () => {
+  return new Promise((resolve) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      unsubscribe();
+      if (!user) return resolve(null);
+
+      const profileRef = doc(db, 'users', user.uid);
+      const profileSnap = await getDoc(profileRef);
+
+      if (!profileSnap.exists()) {
+        return resolve(user);
+      }
+
+      const profile = profileSnap.data();
+
+      // Check and update login streak
+      const today = new Date().toISOString().split('T')[0];
+      const lastLogin = profile.lastLogin || today;
+
+      const daysSinceLastLogin = getDaysBetween(lastLogin, today);
+      let updatedProfile = {};
+
+      if (daysSinceLastLogin === 1) {
+        // ✅ Continued streak
+        updatedProfile.streak = (profile.streak || 0) + 1;
+      } else if (daysSinceLastLogin > 1) {
+        // ❌ Streak broken
+        updatedProfile.streak = 1;
+      } else {
+        // 0 days passed — already logged in today
+        updatedProfile.streak = profile.streak || 1;
+      }
+
+      updatedProfile.lastLogin = today;
+
+      // Apply updates if needed
+      if (
+        updatedProfile.streak !== profile.streak ||
+        updatedProfile.lastLogin !== lastLogin ||
+        updatedProfile.badges
+      ) {
+        await updateDoc(profileRef, updatedProfile);
+        Object.assign(profile, updatedProfile);
+      }
+
+      const badgeMilestones = [5, 15, 30, 60, 100];
+      const earnedBadges = profile.badges || [];
+
+      if (badgeMilestones.includes(updatedProfile.streak)) {
+        const badgeName = `${updatedProfile.streak}-Day Streak`;
+        if (!earnedBadges.includes(badgeName)) {
+          earnedBadges.push(badgeName);
+          updatedProfile.badges = earnedBadges;
+        }
+      }
+
+      resolve({ ...user, ...profile });
+    });
+  });
+};
+
+
+// Helper to compute days between two YYYY-MM-DD strings
+const getDaysBetween = (prevDate, currDate) => {
+  const prev = new Date(prevDate);
+  const curr = new Date(currDate);
+  const diff = curr.getTime() - prev.getTime();
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
 };

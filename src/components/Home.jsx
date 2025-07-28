@@ -5,9 +5,18 @@ import NutritionDonutChart from './NutritionDonutChart';
 import MealCard from './MealCard';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
 
+  const getXPProgress = (xp) => {
+  const level = Math.floor(xp / 100) + 1;
+  const currentXP = xp % 100;
+  const nextXP = 100;
+  const percent = (currentXP / nextXP) * 100;
+  return { level, currentXP, nextXP, percent };
+  };
+
+
 function Home({ meals, onEditMeal, onDeleteMeal, user }) {
-  const today = new Date().toISOString().split('T')[0];
-  const [selectedDate, setSelectedDate] = useState(today);
+  const { level, currentXP, nextXP, percent } = getXPProgress(user.xp || 0);
+  const selectedDate = new Date().toISOString().split('T')[0];
 
   const getMealsByType = (type) => {
     return meals.filter((meal) => meal.mealType === type && meal.date === selectedDate);
@@ -35,7 +44,22 @@ function Home({ meals, onEditMeal, onDeleteMeal, user }) {
 
   return (
     <div className="home-container">
-      <p className="TitleName">Hello {user.firstName}</p>
+      <div className="d-flex align-items-center justify-content-between flex-wrap mb-3">
+        <p className="TitleName mb-1">Hello {user.firstName}</p>
+        <div className="text-end">
+          <span className="small fw-bold" style={{color:'deepskyblue'}}>Level {level}</span>
+          <div className="progress" style={{ height: '6px', width: '150px', background: '#444' }}>
+            <div
+              className="progress-bar"
+              role="progressbar"
+              style={{ width: `${percent}%`, backgroundColor: 'deepskyblue' }}
+              aria-valuenow={currentXP}
+              aria-valuemin={0}
+              aria-valuemax={nextXP}
+            ></div>
+          </div>
+        </div>
+      </div>
 
       <div className="CalBarCharSection bg-dark">
         <div className="d-flex col-md-12 mb-2 justify-content-between">
@@ -61,19 +85,9 @@ function Home({ meals, onEditMeal, onDeleteMeal, user }) {
       </div>
 
       <div className="FoodItemList bg-dark">
-        <div className="mb-3" style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <label className="text-white" style={{ width: '100%', fontSize: '14px', fontWeight: 'bold', alignContent: 'center' }}>Filter Meals by Date:</label>
-          <input
-            type="date"
-            className="form-control"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            max={today}
-          />
-        </div>
 
         {(user.mealOrder || ["Breakfast", "Lunch", "Dinner"]).map((type) => (
-          <div key={type}>
+          <div key={type} className='mb-3'>
             <p className="SubTitleName">{type}</p>
             {getMealsByType(type).map((meal) =>
               meal.foodItems.map((item, i) => (
