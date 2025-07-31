@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import Dashboard from './components/Home'; 
 import HistoryTab from './components/HistoryTab';
@@ -31,19 +31,26 @@ function App() {
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [loading, setLoading] = useState(true);
-
+  const hasShownSplash = useRef(false);
 
   useEffect(() => {
-      setTimeout(() => setLoading(false), 1500); // 1.5s splash
+    const loadUserAndMeals = async () => {
+      const user = await getCurrentUser();
+      if (user) {
+        setCurrentUser(user);
+        const data = await getAllMeals(user.uid);
+        setMeals(data);
+      }
+    };
 
-  const loadUserAndMeals = async () => {
-    const user = await getCurrentUser();
-    if (user) {
-      setCurrentUser(user);
-      const data = await getAllMeals(user.uid);
-      setMeals(data);
+    if (!hasShownSplash.current) {
+      setTimeout(() => {
+        setLoading(false);
+        hasShownSplash.current = true;
+      }, 1500); // splash only once
+    } else {
+      setLoading(false);
     }
-  };
 
     loadUserAndMeals();
   }, []);

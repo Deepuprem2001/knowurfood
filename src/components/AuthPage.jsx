@@ -19,7 +19,6 @@ function AuthPage({ onLoginSuccess }) {
   const [calorieGoal, setCalorieGoal] = useState(2000);
   const [mealOrder, setMealOrder] = useState('Breakfast,Lunch,Dinner');
   const [unit, setUnit] = useState('g');
-  const [darkMode, setDarkMode] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -32,7 +31,6 @@ function AuthPage({ onLoginSuccess }) {
     setCalorieGoal(2000);
     setMealOrder('Breakfast,Lunch,Dinner');
     setUnit('g');
-    setDarkMode(false);
     setError('');
   };
 
@@ -61,7 +59,7 @@ function AuthPage({ onLoginSuccess }) {
           calorieGoal: Number(calorieGoal),
           mealOrder: mealOrder.split(','),
           unit,
-          darkMode
+          
         });
       } else {
         user = await loginUser({ email: username, password });
@@ -81,25 +79,27 @@ function AuthPage({ onLoginSuccess }) {
       <div className="auth-box shadow rounded">
         <h2 className="auth-title">{mode === 'login' ? 'LOGIN' : 'REGISTER'}</h2>
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className='dflex mb-2' style={{display:'flex', alignItems:'center'}}>
-            <label className="text-white" style={{marginRight:'18%', height:'fit-content'}}>Email</label>
-            <input
-              type="email"
-              className="form-control"
-              placeholder="Email"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
+      <form onSubmit={handleSubmit} className="auth-form">
+        {/* EMAIL */}
+        <div className="form-row">
+          <label>Email</label>
+          <input
+            type="email"
+            className="form-control"
+            placeholder="Email"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+        </div>
 
-          </div>
-        <div className='dflex mb-2' style={{display:'flex', alignItems:'center'}}>
-          <label className="text-white" style={{marginRight:'5%', height:'fit-content'}}>Password</label>
-          <div className="position-relative mb-2">
+        {/* PASSWORD */}
+        <div className="form-row">
+          <label>Password</label>
+          <div className="input-group">
             <input
               type={showPassword ? 'text' : 'password'}
-              className="form-control pe-5"
+              className="form-control"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -111,63 +111,74 @@ function AuthPage({ onLoginSuccess }) {
               title="Toggle password"
             />
           </div>
-        </div>  
+        </div>
 
-          {mode === 'register' && (
-            <>
-              <label className="text-white">Confirm Password</label>
+        {mode === 'register' && (
+          <>
+            <div className="form-row">
+              <label>Confirm</label>
               <input
                 type={showPassword ? 'text' : 'password'}
-                className="form-control mb-2"
+                className="form-control"
                 placeholder="Confirm Password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
+            </div>
 
-              <label className="text-white">First Name</label>
+            <div className="form-row">
+              <label>First Name</label>
               <input
                 type="text"
-                className="form-control mb-2"
+                className="form-control"
                 placeholder="First Name"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
               />
+            </div>
 
-              <label className="text-white">Last Name</label>
+            <div className="form-row">
+              <label>Last Name</label>
               <input
                 type="text"
-                className="form-control mb-2"
+                className="form-control"
                 placeholder="Last Name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
               />
+            </div>
 
-              <label className="text-white">Daily Calorie Goal</label>
+            <div className="form-row">
+              <label>Calorie Goal</label>
               <input
                 type="number"
-                className="form-control mb-2"
-                placeholder="Daily Calorie Goal"
+                className="form-control"
+                placeholder="e.g. 2000"
                 value={calorieGoal}
                 onChange={(e) => setCalorieGoal(e.target.value)}
                 required
               />
+            </div>
 
-              <label className="text-white">Meal Order</label>
+            <div className="form-row">
+              <label>Meal Order</label>
               <select
-                className="form-control mb-2"
+                className="form-control"
                 value={mealOrder}
                 onChange={(e) => setMealOrder(e.target.value)}
               >
                 <option value="Breakfast,Lunch,Dinner">Breakfast → Lunch → Dinner</option>
                 <option value="Dinner,Lunch,Breakfast">Dinner → Lunch → Breakfast</option>
               </select>
+            </div>
 
-              <label className="text-white">Preferred Unit</label>
+            <div className="form-row">
+              <label>Preferred Unit</label>
               <select
-                className="form-control mb-2"
+                className="form-control"
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
               >
@@ -175,26 +186,15 @@ function AuthPage({ onLoginSuccess }) {
                 <option value="mg">Milligrams (mg)</option>
                 <option value="kcal">Calories (kcal)</option>
               </select>
+            </div>
+          </>
+        )}
 
-              <div className="form-check form-switch mb-2">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  checked={darkMode}
-                  onChange={() => setDarkMode(!darkMode)}
-                  id="darkModeToggle"
-                />
-                <label className="form-check-label text-white" htmlFor="darkModeToggle">
-                  Enable Dark Mode
-                </label>
-              </div>
-            </>
-          )}
+        <button type="submit" className="btn btn-primary w-100 mt-3 mb-2">
+          {mode === 'login' ? 'Login' : 'Register'}
+        </button>
+      </form>
 
-          <button type="submit" className="btn btn-primary w-100 mb-2">
-            {mode === 'login' ? 'Login' : 'Register'}
-          </button>
-        </form>
 
         <p className="text-white text-center">
           {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}

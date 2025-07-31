@@ -192,7 +192,7 @@ body {
 }
 
 .manual-scan-buttons {
-  justify-content: center;
+  justify-content: space-evenly;
   display: flex;
 }
 
@@ -219,7 +219,7 @@ body {
 
 .FoodNameTextArea {
     resize: block;
-    width: 65%;
+    width: 70%;
     height: 24px;
 }
 

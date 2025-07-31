@@ -145,12 +145,7 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
             <option>Dinner-Breakfast-Lunch</option>
           </select>
         </div>
-
-        <div className="form-check form-switch mb-2">
-          <input className="form-check-input" type="checkbox" id="darkMode" checked={darkMode} onChange={() => setDarkMode(!darkMode)} />
-          <label className="form-check-label small" htmlFor="darkMode">Enable Dark Mode (future)</label>
-        </div>
-
+        
         <div className="mb-2">
           <label className="form-label small">Units</label>
           <select className="form-select form-select-sm" value={unit} onChange={e => setUnit(e.target.value)}>

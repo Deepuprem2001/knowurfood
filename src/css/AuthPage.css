@@ -71,3 +71,30 @@
     transform: translateY(0);
   }
 }
+
+.form-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.form-row label {
+  color: white;
+  width: 35%;
+  font-size: 14px;
+  margin-right: 10px;
+  text-align: left;
+}
+
+.form-row input,
+.form-row select {
+  width: 90%;
+  padding: 6px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  background-color: #3b3b3b;
+  color: white;
+}
+
