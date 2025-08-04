@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
-import Dashboard from './components/Home'; 
+import Dashboard from './components/Home';
 import HistoryTab from './components/HistoryTab';
 import AddMealModal from './components/AddMeal';
 import AuthPage from './components/AuthPage';
-import ProfileTab from './components/ProfileTab'; 
+import ProfileTab from './components/ProfileTab';
 import SuggestionsTab from './components/SuggestionsTab';
 import { deleteAllMeals } from './services/dbService';
 import logo from '../src/assets/Logo.png';
@@ -47,7 +47,7 @@ function App() {
       setTimeout(() => {
         setLoading(false);
         hasShownSplash.current = true;
-      }, 1500); // splash only once
+      }, 1500);
     } else {
       setLoading(false);
     }
@@ -55,48 +55,77 @@ function App() {
     loadUserAndMeals();
   }, []);
 
-const handleLoginSuccess = async (user) => {
-  setCurrentUser(user);
-  const data = await getAllMeals(user.uid);
-  setMeals(data);
-};
+  // ✅ Step 5B: Meal-time notifications
+  useEffect(() => {
+    if (!('Notification' in window) || !currentUser) return;
 
-const handleSaveMeal = async (mealData) => {
-  if (!currentUser) return;
-  const fullData = { ...mealData, userId: currentUser.uid };
+    Notification.requestPermission().then((perm) => {
+      if (perm !== 'granted') return;
 
-  if (editMealData) {
-    await updateMeal({ ...fullData, id: editMealData.id }, currentUser.uid);
-    const updated = meals.map((m) =>
-      m.id === editMealData.id ? { ...fullData, id: editMealData.id } : m
-    );
+      const interval = setInterval(() => {
+        const now = new Date();
+        const currentTime = now.toTimeString().substring(0, 5); // "HH:MM"
+        const { breakfastTime, lunchTime, dinnerTime } = currentUser;
+
+        const timeMap = {
+          [breakfastTime]: '🍳 Time for breakfast! Log your meal!',
+          [lunchTime]: '🥗 Time for lunch! Don’t forget to log it!',
+          [dinnerTime]: '🍝 Time for dinner! Keep tracking!',
+        };
+
+        if (timeMap[currentTime]) {
+          new Notification('KnowUrFood Reminder', {
+            body: timeMap[currentTime],
+            icon: '/vite.svg' // Or your actual logo path
+          });
+        }
+      }, 60000); // Check every minute
+
+      return () => clearInterval(interval);
+    });
+  }, [currentUser]);
+
+  const handleLoginSuccess = async (user) => {
+    setCurrentUser(user);
+    const data = await getAllMeals(user.uid);
+    setMeals(data);
+  };
+
+  const handleSaveMeal = async (mealData) => {
+    if (!currentUser) return;
+    const fullData = { ...mealData, userId: currentUser.uid };
+
+    if (editMealData) {
+      await updateMeal({ ...fullData, id: editMealData.id }, currentUser.uid);
+      const updated = meals.map((m) =>
+        m.id === editMealData.id ? { ...fullData, id: editMealData.id } : m
+      );
+      setMeals(updated);
+      setEditMealData(null);
+    } else {
+      await addMeal(fullData, currentUser.uid);
+      setToastMessage('+10 XP! 🎉');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      const all = await getAllMeals(currentUser.uid);
+      const updatedUser = await getCurrentUser();
+      setMeals(all);
+      setCurrentUser(updatedUser);
+    }
+    setShowModel(false);
+  };
+
+  const handleDeleteMeal = async (id) => {
+    await deleteMeal(id, currentUser.uid);
+    const updated = meals.filter((m) => m.id !== id);
     setMeals(updated);
-    setEditMealData(null);
-  } else {
-    await addMeal(fullData, currentUser.uid);
-    setToastMessage('+10 XP! 🎉');
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
-    const all = await getAllMeals(currentUser.uid);
-    const updatedUser = await getCurrentUser(); // 🔁 Refresh user profile
-    setMeals(all);
-    setCurrentUser(updatedUser); // ✅ Triggers XP/level bar update
+  };
 
-      }
-  setShowModel(false);
-};
-
-const handleDeleteMeal = async (id) => {
-  await deleteMeal(id, currentUser.uid);
-  const updated = meals.filter((m) => m.id !== id);
-  setMeals(updated);
-};
-
-const handleLogout = async () => {
-  await logoutUser();
-  setCurrentUser(null);
-  setMeals([]);
-};
+  const handleLogout = async () => {
+    await logoutUser();
+    setCurrentUser(null);
+    setMeals([]);
+  };
 
   if (!currentUser) {
     return <AuthPage onLoginSuccess={handleLoginSuccess} />;
@@ -129,6 +158,7 @@ const handleLogout = async () => {
 
       {activeTab === 'history' && (
         <HistoryTab
+          user={currentUser}
           meals={meals}
           onEditMeal={(meal) => {
             setEditMealData(meal);
@@ -149,9 +179,9 @@ const handleLogout = async () => {
           meals={meals}
           onLogout={handleLogout}
           clearAllMeals={async () => {
-              await deleteAllMeals(currentUser.uid); // Firestore cleanup
-              setMeals([]);                          // App state reset
-            }}
+            await deleteAllMeals(currentUser.uid);
+            setMeals([]);
+          }}
         />
       )}
 
@@ -169,6 +199,7 @@ const handleLogout = async () => {
           setEditMealData(null);
         }}
         onSave={handleSaveMeal}
+        user={currentUser}
         editMeal={editMealData}
       />
 
@@ -197,14 +228,13 @@ const handleLogout = async () => {
         </div>
       )}
 
-    {showToast && (
-      <div className="toast-container position-fixed bottom-0 end-0 p-3" style={{ zIndex: 9999 }}>
-        <div className="toast show bg-success text-white">
-          <div className="toast-body fw-bold">{toastMessage}</div>
+      {showToast && (
+        <div className="toast-container position-fixed bottom-0 end-0 p-3" style={{ zIndex: 9999 }}>
+          <div className="toast show bg-success text-white">
+            <div className="toast-body fw-bold">{toastMessage}</div>
+          </div>
         </div>
-      </div>
-    )}
-
+      )}
     </>
   );
 }

@@ -106,34 +106,37 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
       </div>
 
       <div className="card bg-dark border-0 p-3 mb-3 shadow-sm text-white">
-      <h6 className="fw-bold mb-2">Your Rewards</h6>
+        <h6 className="fw-bold mb-2">Your Rewards</h6>
 
-      <p className="mb-1">🎮 Level {level}</p>
-      <div className="progress mb-2" style={{ height: '6px', background: '#444' }} title={`${currentXP}/${nextXP} XP`}>
-        <div
-          className="progress-bar"
-          role="progressbar"
-          style={{ width: `${xpPercent}%`, backgroundColor: '#28a745' }}
-          aria-valuenow={currentXP}
-          aria-valuemin={0}
-          aria-valuemax={nextXP}
-        ></div>
-      </div>
-
-      <p className="mb-1">🏅 Badges Unlocked:</p>
-      {badges.length === 0 ? (
-        <p className="text-muted small">No badges yet — keep logging meals!</p>
-      ) : (
-        <div className="d-flex flex-wrap gap-2">
-          {badges.map((badge, idx) => (
-            <span key={idx} className="badge rounded-pill bg-success text-white">
-              {badge}
-            </span>
-          ))}
+        <p className="mb-1">🎮 Level {level}</p>
+        <div className="progress mb-2" style={{ height: '6px', background: '#444' }} title={`${currentXP}/${nextXP} XP`}>
+          <div
+            className="progress-bar"
+            role="progressbar"
+            style={{ width: `${xpPercent}%`, backgroundColor: '#28a745' }}
+            aria-valuenow={currentXP}
+            aria-valuemin={0}
+            aria-valuemax={nextXP}
+          ></div>
         </div>
-      )}
-    </div>
 
+        <p className="mb-1">🏅 Badges Unlocked:</p>
+        {badges.length === 0 ? (
+          <p className="text-muted small">No badges yet — keep logging meals!</p>
+        ) : (
+          <div className="d-flex flex-wrap gap-2">
+            {badges.map((badge, idx) => (
+              <span
+                key={idx}
+                className={`badge rounded-pill ${badge.includes('Goal') ? 'bg-success' : 'bg-info'} text-dark p-2`}
+                title={badge}
+              >
+                {badge}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="card bg-dark border-0 p-3 mb-3 shadow-sm text-white">
         <h6 className="fw-bold">Preferences</h6>

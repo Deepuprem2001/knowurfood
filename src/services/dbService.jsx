@@ -9,8 +9,6 @@ import {
   collection,
   addDoc,
   getDocs,
-  query,
-  where,
   doc,
   updateDoc,
   deleteDoc,
@@ -18,32 +16,22 @@ import {
   getDoc
 } from 'firebase/firestore';
 
-const calculateLevel = (xp) => {
-  return Math.floor(xp / 100) + 1; // 100 XP per level
-};
+const calculateLevel = (xp) => Math.floor(xp / 100) + 1;
 
-// ========== 📦 MEALS (Nested under user) ==========
+// ========== 📦 MEALS ==========
 export const addMeal = async (mealData, userId) => {
-  // 1. Add meal to Firestore
   await addDoc(collection(db, 'users', userId, 'meals'), mealData);
 
-  // 2. Update user's XP and level
   const userRef = doc(db, 'users', userId);
   const userSnap = await getDoc(userRef);
-
   if (userSnap.exists()) {
     const userData = userSnap.data();
-    const currentXP = userData.xp || 0;
-    const newXP = currentXP + 10; // 🥗 10 XP per meal
+    const newXP = (userData.xp || 0) + 10;
     const newLevel = calculateLevel(newXP);
 
-    await updateDoc(userRef, {
-      xp: newXP,
-      level: newLevel
-    });
+    await updateDoc(userRef, { xp: newXP, level: newLevel });
   }
 };
-
 
 export const getAllMeals = async (userId) => {
   const snapshot = await getDocs(collection(db, 'users', userId, 'meals'));
@@ -73,20 +61,74 @@ export const updateUserProfile = async (userId, updatedProfile) => {
   await updateDoc(ref, updatedProfile);
 };
 
+// ========== ⚖️ WEIGHT TRACKING ==========
+export const addWeightLog = async (userId, date, weight) => {
+  const ref = doc(db, 'users', userId, 'weightLogs', date);
+  await setDoc(ref, { date, weight });
+};
+
+export const getWeightLogs = async (userId) => {
+  const snapshot = await getDocs(collection(db, 'users', userId, 'weightLogs'));
+  return snapshot.docs.map(doc => doc.data());
+};
 
 // ========== 👤 AUTH ==========
 export const registerUser = async ({ email, password, ...profile }) => {
   const result = await createUserWithEmailAndPassword(auth, email, password);
   const user = result.user;
+
+  const {
+    firstName,
+    lastName,
+    mealOrder,
+    unit,
+    currentWeight,
+    goalWeight,
+    height,
+    goalDate,
+    breakfastTime,
+    lunchTime,
+    dinnerTime,
+    calorieGoal: userDefinedGoal,
+    age = 25,
+    gender = 'male'
+  } = profile;
+
+  const daysToGoal = Math.max(1, Math.ceil((new Date(goalDate) - new Date()) / (1000 * 60 * 60 * 24)));
+
+  const bmr =
+    gender === 'male'
+      ? 10 * currentWeight + 6.25 * height - 5 * age + 5
+      : 10 * currentWeight + 6.25 * height - 5 * age - 161;
+
+  const adjustment = ((goalWeight - currentWeight) * 7700) / daysToGoal;
+  const calculatedGoal = Math.round(bmr + adjustment);
+
+  const finalCalorieGoal = isNaN(userDefinedGoal) ? calculatedGoal : Number(userDefinedGoal);
+
   await setDoc(doc(db, 'users', user.uid), {
-    ...profile,
+    firstName,
+    lastName,
+    mealOrder,
+    unit,
+    currentWeight,
+    goalWeight,
+    goalDate,
+    height,
+    breakfastTime,
+    lunchTime,
+    dinnerTime,
     xp: 0,
     level: 1,
     streak: 1,
     lastLogin: new Date().toISOString().split('T')[0],
-    badges: []
+    badges: [],
+    calorieGoal: finalCalorieGoal,
+    age,
+    gender
   });
-  return { ...user, ...profile };
+
+  return { ...user, ...profile, calorieGoal: finalCalorieGoal };
 };
 
 export const loginUser = async ({ email, password }) => {
@@ -112,42 +154,22 @@ export const getCurrentUser = async () => {
 
       const profileRef = doc(db, 'users', user.uid);
       const profileSnap = await getDoc(profileRef);
-
-      if (!profileSnap.exists()) {
-        return resolve(user);
-      }
+      if (!profileSnap.exists()) return resolve(user);
 
       const profile = profileSnap.data();
-
-      // Check and update login streak
       const today = new Date().toISOString().split('T')[0];
       const lastLogin = profile.lastLogin || today;
-
       const daysSinceLastLogin = getDaysBetween(lastLogin, today);
       let updatedProfile = {};
 
-      if (daysSinceLastLogin === 1) {
-        // ✅ Continued streak
-        updatedProfile.streak = (profile.streak || 0) + 1;
-      } else if (daysSinceLastLogin > 1) {
-        // ❌ Streak broken
-        updatedProfile.streak = 1;
-      } else {
-        // 0 days passed — already logged in today
-        updatedProfile.streak = profile.streak || 1;
-      }
+      updatedProfile.streak =
+        daysSinceLastLogin === 1
+          ? (profile.streak || 0) + 1
+          : daysSinceLastLogin > 1
+          ? 1
+          : profile.streak || 1;
 
       updatedProfile.lastLogin = today;
-
-      // Apply updates if needed
-      if (
-        updatedProfile.streak !== profile.streak ||
-        updatedProfile.lastLogin !== lastLogin ||
-        updatedProfile.badges
-      ) {
-        await updateDoc(profileRef, updatedProfile);
-        Object.assign(profile, updatedProfile);
-      }
 
       const badgeMilestones = [5, 15, 30, 60, 100];
       const earnedBadges = profile.badges || [];
@@ -160,16 +182,53 @@ export const getCurrentUser = async () => {
         }
       }
 
+      try {
+        const weightLogsSnap = await getDocs(collection(db, 'users', user.uid, 'weightLogs'));
+        const weightLogs = weightLogsSnap.docs.map(doc => doc.data());
+
+        if (
+          weightLogs.length > 0 &&
+          profile.goalWeight &&
+          profile.goalDate &&
+          !earnedBadges.includes('🎯 Goal Achieved')
+        ) {
+          const latest = weightLogs.reduce((a, b) => (a.date > b.date ? a : b));
+          const achieved =
+            (profile.goalWeight >= profile.currentWeight && latest.weight >= profile.goalWeight) ||
+            (profile.goalWeight < profile.currentWeight && latest.weight <= profile.goalWeight);
+          const beforeDeadline = new Date(latest.date) <= new Date(profile.goalDate);
+
+          if (achieved && beforeDeadline) {
+            earnedBadges.push('🎯 Goal Achieved');
+            const newXP = (profile.xp || 0) + 50;
+            const newLevel = calculateLevel(newXP);
+
+            updatedProfile.badges = earnedBadges;
+            updatedProfile.xp = newXP;
+            updatedProfile.level = newLevel;
+          }
+        }
+      } catch (err) {
+        console.error("Error checking goal badge:", err);
+      }
+
+      if (
+        updatedProfile.streak !== profile.streak ||
+        updatedProfile.lastLogin !== lastLogin ||
+        updatedProfile.badges ||
+        updatedProfile.xp
+      ) {
+        await updateDoc(profileRef, updatedProfile);
+        Object.assign(profile, updatedProfile);
+      }
+
       resolve({ ...user, ...profile });
     });
   });
 };
 
-
-// Helper to compute days between two YYYY-MM-DD strings
 const getDaysBetween = (prevDate, currDate) => {
   const prev = new Date(prevDate);
   const curr = new Date(currDate);
-  const diff = curr.getTime() - prev.getTime();
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
+  return Math.floor((curr - prev) / (1000 * 60 * 60 * 24));
 };

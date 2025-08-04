@@ -3,16 +3,17 @@ import CaloriesBarChart from './CaloriesBarChart';
 import CalorieDonutChart from './CaloriesDonutChart';
 import NutritionDonutChart from './NutritionDonutChart';
 import MealCard from './MealCard';
+import WeightLogger from './WeightLogger'; // ✅ NEW IMPORT
+import WeightLineChart from './WeightLineChart'; // ✅ NEW IMPORT
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
 
-  const getXPProgress = (xp) => {
+const getXPProgress = (xp) => {
   const level = Math.floor(xp / 100) + 1;
   const currentXP = xp % 100;
   const nextXP = 100;
   const percent = (currentXP / nextXP) * 100;
   return { level, currentXP, nextXP, percent };
-  };
-
+};
 
 function Home({ meals, onEditMeal, onDeleteMeal, user }) {
   const { level, currentXP, nextXP, percent } = getXPProgress(user.xp || 0);
@@ -47,7 +48,7 @@ function Home({ meals, onEditMeal, onDeleteMeal, user }) {
       <div className="d-flex align-items-center justify-content-between flex-wrap mb-3">
         <p className="TitleName mb-1">Hello {user.firstName}</p>
         <div className="text-end">
-          <span className="small fw-bold" style={{color:'deepskyblue'}}>Level {level}</span>
+          <span className="small fw-bold" style={{ color: 'deepskyblue' }}>Level {level}</span>
           <div className="progress" style={{ height: '6px', width: '150px', background: '#444' }}>
             <div
               className="progress-bar"
@@ -61,6 +62,8 @@ function Home({ meals, onEditMeal, onDeleteMeal, user }) {
         </div>
       </div>
 
+      {/* ✅ Weight tracker UI */}
+
       <div className="CalBarCharSection bg-dark">
         <div className="d-flex col-md-12 mb-2 justify-content-between">
           <p className="SubTitleName mb-0">Calories Consumed</p>
@@ -72,6 +75,9 @@ function Home({ meals, onEditMeal, onDeleteMeal, user }) {
         </div>
         <CaloriesBarChart meals={meals} startOfWeek={startOfWeek} />
       </div>
+
+      <WeightLineChart user={user} />
+
 
       <div className="TodayChartsSection col-md-12">
         <div className="CalDonutSection bg-dark">
@@ -85,7 +91,6 @@ function Home({ meals, onEditMeal, onDeleteMeal, user }) {
       </div>
 
       <div className="FoodItemList bg-dark">
-
         {(user.mealOrder || ["Breakfast", "Lunch", "Dinner"]).map((type) => (
           <div key={type} className='mb-3'>
             <p className="SubTitleName">{type}</p>

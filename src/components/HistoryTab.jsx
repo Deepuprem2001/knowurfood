@@ -2,10 +2,31 @@ import React, { useState } from 'react';
 import CaloriesDonutChart from './CaloriesDonutChart';
 import NutritionDonutChart from './NutritionDonutChart';
 import MealCard from './MealCard';
+import WeightLogger from './WeightLogger';
+import { useEffect } from 'react';
+import { getWeightLogs } from '../services/dbService';
 
-function HistoryTab({ meals, onEditMeal, onDeleteMeal }) {
+
+function HistoryTab({ meals, onEditMeal, onDeleteMea, user }) {
   const today = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(today);
+
+  const [weightLogs, setWeightLogs] = useState([]);
+  const [weightForDate, setWeightForDate] = useState(null);
+
+  useEffect(() => {
+    if (user?.uid) {
+      getWeightLogs(user.uid).then((logs) => {
+        setWeightLogs(logs);
+      });
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const log = weightLogs.find(w => w.date === selectedDate);
+    setWeightForDate(log?.weight || null);
+  }, [selectedDate, weightLogs]);
+
 
   const mealsForDate = meals.filter((meal) => meal.date === selectedDate);
 
@@ -33,9 +54,19 @@ function HistoryTab({ meals, onEditMeal, onDeleteMeal }) {
         max={today}
       />
 
+      <div className="FoodItemList mb-2 bg-dark">
+        <h6 className='SubTitleName mb-2'>Weight Logged: </h6>
+        {weightForDate ? (
+         <span className="fw-bold text-info">{weightForDate} kg</span>
+        ) : (
+          <p className="text-muted">No weight logged on {selectedDate}</p>
+        )}
+      </div>
+
+
       <div className="TodayChartsSection d-flex">
         <div className="CalDonutSection bg-dark">
-          <CaloriesDonutChart meals={mealsForDate} selectedDate={selectedDate}/>
+          <CaloriesDonutChart meals={mealsForDate} selectedDate={selectedDate} goal={user.calorieGoal}/>
         </div>
         <div className="NutriDonutSection bg-dark">
           <NutritionDonutChart meals={mealsForDate} selectedDate={selectedDate}/>

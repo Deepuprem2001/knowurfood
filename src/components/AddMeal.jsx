@@ -2,8 +2,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Tesseract from 'tesseract.js';
 import { parseNutritionFromText } from '../utils/mlparser';
+import WeightLogger from './WeightLogger';
 
-function AddMealModal({ isOpen, onClose, onSave, editMeal }) {
+
+function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
   const [mealType, setMealType] = useState('Breakfast');
   const [mealDate, setMealDate] = useState(new Date());
   const [foodNames, setFoodNames] = useState([""]);
@@ -13,9 +15,15 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal }) {
   const [showAutoEntry, setShowAutoEntry] = useState(false); 
   const videoRef = useRef(null);
 
+  const [mode, setMode] = useState(null); // 'meal' or 'weight'
+  const [weight, setWeight] = useState('');
+  const [weightDate, setWeightDate] = useState(new Date().toISOString().split('T')[0]);
+
+
   useEffect(() => {
     if (editMeal) {
       stopScan();
+      setMode(null);
       setMealType(editMeal.mealType);
       setMealDate(new Date(editMeal.timestamp));
       setFoodNames(editMeal.foodItems.map(f => f.name));
@@ -28,6 +36,7 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal }) {
 
   const resetModel = () => {
     stopScan();
+    setMode(null);
     setFoodSections([[{ type: 'Protein', count: '', serving: '1', total: '' }]]);
     setFoodNames([""]);
     setMealDate(new Date());
@@ -189,8 +198,49 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal }) {
   };
 
   if (!isOpen) return null;
+  if (mode === null) {
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-container bg-dark text-white p-4 text-center">
+        <h5 className="mb-3">What would you like to log?</h5>
+        <div className="d-flex flex-column gap-2">
+          <button className="btn btn-primary" onClick={() => setMode('meal')}>
+            Log Meal
+          </button>
+          <button className="btn btn-outline-light" onClick={() => setMode('weight')}>
+            Log Weight
+          </button>
+          <button className="btn btn-danger mt-2" onClick={() => { resetModel(); onClose(); }}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
   return (
+  <>
+  {mode === null && (
+      <div className="modal-backdrop">
+        <div className="modal-container bg-dark text-white p-4 text-center">
+          <h5 className="mb-3">What would you like to log?</h5>
+          <div className="d-flex flex-column gap-2">
+            <button className="btn btn-primary" onClick={() => setMode('meal')}>
+              ➕ Log Meal
+            </button>
+            <button className="btn btn-outline-light" onClick={() => setMode('weight')}>
+              ⚖️ Log Weight
+            </button>
+            <button className="btn btn-secondary mt-2" onClick={() => { resetModel(); onClose(); }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+  )} 
+  {mode === 'meal' && (
     <div className="modal-backdrop">
       <div className="modal-container bg-dark">
         <div className="modal-header col-md-12 mb-2" style={{ display: 'flex' }}>
@@ -245,6 +295,21 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal }) {
         </div>
       </div>
     </div>
+  )}
+  {mode === 'weight' && (
+    <div className='modal-backdrop'>
+    <div className="modal-container bg-dark text-white p-4 text-center">
+      <WeightLogger user={user} />
+      <div className="d-flex justify-content-end">
+        <button className="btn btn-danger mt-2" onClick={() => { resetModel(); onClose(); }}>
+          Close
+        </button>
+      </div>
+    </div>
+    </div>
+  )}
+
+  </>
   );
 
   function renderFoodSections(showAuto = false) {

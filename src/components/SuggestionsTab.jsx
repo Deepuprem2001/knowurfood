@@ -1,25 +1,25 @@
 // SuggestionsTab.jsx
 import React, { useEffect, useState } from 'react';
 import CaloriesBarChart from './CaloriesBarChart';
+import { getWeightLogs } from '../services/dbService'; // ✅ import Firestore logic
 
-function SuggestionsTab({ meals }) {
+function SuggestionsTab({ meals, user }) {
   const [thisWeek, setThisWeek] = useState({});
   const [lastWeek, setLastWeek] = useState({});
-    const startOfWeek = new Date();
-    startOfWeek.setDate(startOfWeek.getDate() - 6);
+  const [behindSchedule, setBehindSchedule] = useState(false); // ✅ alert state
 
+  const startOfWeek = new Date();
+  startOfWeek.setDate(startOfWeek.getDate() - 6);
 
-    const nutrientTargets = {
-    Protein: 50 * 7,           // 350g/week
-    Carbohydrate: 260 * 7,     // 1820g/week
-    Fat: 70 * 7,               // 490g/week
-    'Carbs as Sugar': 30 * 7,  // 210g/week
-    Fibre: 30 * 7,             // 210g/week
-    Salt: 6 * 7,               // 42g/week
-    };
+  const nutrientTargets = {
+    Protein: 50 * 7,
+    Carbohydrate: 260 * 7,
+    Fat: 70 * 7,
+    'Carbs as Sugar': 30 * 7,
+    Fibre: 30 * 7,
+    Salt: 6 * 7,
+  };
 
-
-  // helper
   const getWeekRange = (offset = 0) => {
     const today = new Date();
     const end = new Date(today.setDate(today.getDate() - offset));
@@ -69,6 +69,35 @@ function SuggestionsTab({ meals }) {
     setLastWeek(computeAverages(lastWeekDays));
   }, [meals]);
 
+  // ✅ Step 5A – weight goal tracking logic
+  useEffect(() => {
+    const checkProgress = async () => {
+      if (!user?.goalDate || !user?.goalWeight || !user?.currentWeight) return;
+
+      const logs = await getWeightLogs(user.uid);
+      if (logs.length === 0) return;
+
+      const startDate = new Date(user.createdAt || logs[0].date);
+      const today = new Date();
+      const goalDate = new Date(user.goalDate);
+      const totalDays = Math.max(1, (goalDate - startDate) / 86400000);
+      const daysPassed = Math.max(1, (today - startDate) / 86400000);
+
+      const weightDiff = user.goalWeight - user.currentWeight;
+      const expectedChange = (weightDiff / totalDays) * daysPassed;
+      const expectedWeight = user.currentWeight + expectedChange;
+
+      const latestWeight = logs.reduce((a, b) => (a.date > b.date ? a : b)).weight;
+
+      if ((weightDiff > 0 && latestWeight < expectedWeight - 0.5) ||
+          (weightDiff < 0 && latestWeight > expectedWeight + 0.5)) {
+        setBehindSchedule(true);
+      }
+    };
+
+    checkProgress();
+  }, [user]);
+
   const suggestions = [];
   Object.keys(nutrientTargets).forEach(type => {
     const avg = thisWeek[type] || 0;
@@ -88,12 +117,18 @@ function SuggestionsTab({ meals }) {
     <div className="home-container">
       <p className="TitleName">Suggestions</p>
 
+      {behindSchedule && (
+        <div className="CalBarCharSection text-white fw-bold small mb-2 bg-dark">
+          ⚠️ You're behind your weight goal progress. Try adjusting your intake!
+        </div>
+      )}
+
       <div className="CalBarCharSection bg-dark mb-2">
-      <p className="SubTitleName mb-2">Weekly Calorie Trend</p>
+        <p className="SubTitleName mb-2">Weekly Calorie Trend</p>
         <CaloriesBarChart meals={meals} startOfWeek={startOfWeek} />
       </div>
 
-      <div className="NutritionProgressSection mb-2 bg-dark list-group" style={{padding:'5%'}}>
+      <div className="NutritionProgressSection mb-2 bg-dark list-group" style={{ padding: '5%' }}>
         <p className="SubTitleName">This Week's Nutrient Averages</p>
         {Object.keys(nutrientTargets).map(type => {
           const avg = thisWeek[type] || 0;
@@ -124,7 +159,7 @@ function SuggestionsTab({ meals }) {
 
       <div className="SuggestionsBox">
         {suggestions.length > 0 ? (
-          <ul className="list-group bg-dark" style={{padding:'5%'}}>
+          <ul className="list-group bg-dark" style={{ padding: '5%' }}>
             <p className="SubTitleName">Suggestions</p>
             {suggestions.map((s, i) => (
               <li key={i} className="list-group-item small bg-dark text-white border-0 ps-0">{s}</li>
