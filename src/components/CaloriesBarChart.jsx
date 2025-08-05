@@ -19,17 +19,21 @@ function CaloriesBarChart({ meals, startOfWeek }) {
     const weekDates = getWeekDates();
     return weekDates.map(date => {
       let total = 0;
-      meals
-        .filter(meal => meal.date === date)
-        .forEach(meal => {
-          meal.foodItems.forEach(item => {
-            item.nutrients.forEach(n => {
-              const val = parseFloat(n.total) || 0;
-              if (n.type === "Carbohydrate" || n.type === "Protein") total += val * 4;
-              if (n.type === "Fat") total += val * 9;
-            });
+        meals
+          .filter(meal => meal.date === date)
+          .forEach(meal => {
+            if (meal.kcal) {
+              total += meal.kcal;
+            } else {
+              meal.foodItems.forEach(item => {
+                item.nutrients.forEach(n => {
+                  const val = parseFloat(n.total) || 0;
+                  if (n.type === "Carbohydrate" || n.type === "Protein") total += val * 4;
+                  if (n.type === "Fat") total += val * 9;
+                });
+              });
+            }
           });
-        });
       return Math.round(total);
     });
   };

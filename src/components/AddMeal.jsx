@@ -1,9 +1,6 @@
-// AddMeal.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import Tesseract from 'tesseract.js';
-import { parseNutritionFromText } from '../utils/mlparser';
+import { BrowserMultiFormatReader } from '@zxing/library'; // NEW
 import WeightLogger from './WeightLogger';
-
 
 function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
   const [mealType, setMealType] = useState('Breakfast');
@@ -18,7 +15,11 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
   const [mode, setMode] = useState(null); // 'meal' or 'weight'
   const [weight, setWeight] = useState('');
   const [weightDate, setWeightDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  const [scannedKcal, setScannedKcal] = useState(null);
 
+
+  const toTitleCase = str => str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.slice(1));
 
   useEffect(() => {
     if (editMeal) {
@@ -34,7 +35,22 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
     }
   }, [editMeal]);
 
-  const resetModel = () => {
+  const ALLOWED_NUTRIENTS = [
+  'Protein', 'Fat', 'Carbohydrate', 'Sugar', 'Sugars',
+  'Fibre', 'Fiber', 'Salt', 'Caffeine'
+  ];
+
+  const normalizeNutrient = (type = '') => {
+    const t = type.toLowerCase();
+    if (t === 'sugars') return 'Sugar';
+    if (t === 'fiber') return 'Fibre';
+    if (t === 'proteins') return 'Protein';
+    if (t === 'carbohydrates') return 'Carbohydrate';
+    if (t === 'saturated fat') return 'Fat';
+    return type;
+  };
+
+const resetModel = () => {
     stopScan();
     setMode(null);
     setFoodSections([[{ type: 'Protein', count: '', serving: '1', total: '' }]]);
@@ -43,6 +59,7 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
     setShowManualEntry(false);
     setShowAutoEntry(false);
     setScanning(false);
+    setScannedKcal(null);
   };
 
   const switchMode = (mode) => {
@@ -100,12 +117,15 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
       name: foodNames[i] || `Food ${i + 1}`,
       nutrients,
     }));
+
     const mealData = {
       mealType,
       date: mealDate.toISOString().split('T')[0],
       timestamp: mealDate.toISOString(),
       foodItems,
+      kcal: scannedKcal || calculateCalories(foodItems),
     };
+
     onSave(mealData);
     resetModel();
     onClose();
@@ -179,14 +199,26 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
 
       const n = top.nutriments;
 
-      const newRows = [
-        n.proteins_100g && { type: 'Protein', count: parseFloat(n.proteins_100g).toFixed(2), serving: '1', total: parseFloat(n.proteins_100g).toFixed(2) },
-        n.fat_100g && { type: 'Fat', count: parseFloat(n.fat_100g).toFixed(2), serving: '1', total: parseFloat(n.fat_100g).toFixed(2) },
-        n.carbohydrates_100g && { type: 'Carbohydrate', count: parseFloat(n.carbohydrates_100g).toFixed(2), serving: '1', total: parseFloat(n.carbohydrates_100g).toFixed(2) },
-        n.sugars_100g && { type: 'Carbs as Sugar', count: parseFloat(n.sugars_100g).toFixed(2), serving: '1', total: parseFloat(n.sugars_100g).toFixed(2) },
-        n.fiber_100g && { type: 'Fibre', count: parseFloat(n.fiber_100g).toFixed(2), serving: '1', total: parseFloat(n.fiber_100g).toFixed(2) },
-        n.salt_100g && { type: 'Salt', count: parseFloat(n.salt_100g).toFixed(2), serving: '1', total: parseFloat(n.salt_100g).toFixed(2) },
-      ].filter(Boolean);
+      const rawNutrients = {
+        Protein: n.proteins_100g,
+        Fat: n.fat_100g,
+        Carbohydrate: n.carbohydrates_100g,
+        Sugar: n.sugars_100g,
+        Fibre: n.fiber_100g,
+        Salt: n.salt_100g,
+        Caffeine: n.caffeine_100g,
+      };
+
+      const newRows = Object.entries(rawNutrients)
+        .filter(([key, val]) => ALLOWED_NUTRIENTS.includes(key) && val !== undefined)
+        .map(([type, count]) => ({
+          type,
+          count: parseFloat(count).toFixed(2),
+          serving: '1',
+          total: parseFloat(count).toFixed(2),
+        }));
+
+
 
       const updated = [...foodSections];
       updated[index] = newRows;
@@ -196,6 +228,85 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
       alert("⚠️ Could not fetch nutrition info. Try a more specific food name.");
     }
   };
+
+
+  const handleBarcodeImage = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const img = new Image();
+  img.src = URL.createObjectURL(file);
+
+  img.onload = async () => {
+    const codeReader = new BrowserMultiFormatReader();
+    try {
+      const result = await codeReader.decodeFromImageElement(img);
+      await fetchNutritionByBarcode(result.getText());
+    } catch (error) {
+      alert('❌ Could not decode barcode.');
+      console.error(error);
+    }
+  };
+  };
+
+  const fetchNutritionByBarcode = async (barcode) => {
+  try {
+    const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+    const data = await res.json();
+
+    if (data.status === 0) {
+      alert('❌ Product not found.');
+      return;
+    }
+
+    const nutriments = data.product.nutriments;
+    const foodName = data.product.product_name || 'Scanned Product';
+
+    const rawNutrients = {
+      Fat: nutriments.fat_100g,
+      Carbohydrate: nutriments.carbohydrates_100g,
+      Protein: nutriments.proteins_100g,
+      Sugar: nutriments.sugars_100g,
+      Fibre: nutriments.fiber_100g,
+      Salt: nutriments.salt_100g,
+      Caffeine: nutriments.caffeine_100g,
+    };
+
+    const kcal = parseFloat(nutriments['energy-kcal_100g']) || 0;
+    setScannedKcal(kcal); // ✅ SET CALORIES HERE
+
+    const nutrients = Object.entries(rawNutrients)
+      .filter(([key, val]) => ALLOWED_NUTRIENTS.includes(key) && val !== undefined)
+      .map(([type, count]) => ({
+        type,
+        count: parseFloat(count).toFixed(2),
+        serving: '1',
+        total: parseFloat(count).toFixed(2),
+      }));
+
+    setFoodNames([foodName]);
+    setFoodSections([nutrients]);
+    switchMode('manual');
+
+  } catch (err) {
+    alert("⚠️ Nutrition fetch failed.");
+    console.error(err);
+  }
+  };
+
+  const calculateCalories = (foodItems) => {
+  let total = 0;
+  foodItems.forEach(item => {
+    item.nutrients.forEach(n => {
+      if (n.type.toLowerCase().includes("calorie") || n.type.toLowerCase().includes("kcal")) {
+        total += parseFloat(n.total || 0);
+      }
+    });
+  });
+  return total;
+  };
+
+
 
   if (!isOpen) return null;
   if (mode === null) {
@@ -265,7 +376,16 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
         <div className="manual-scan-buttons mb-2">
           <button className="btn btn-primary btn-sm" onClick={() => switchMode('manual')}>Manual Entry</button>
           <button className="btn btn-primary btn-sm" onClick={() => switchMode('auto')}>Auto Fill</button>
-          <button className="btn btn-primary btn-sm" onClick={startScan}>Scan It</button>
+          <label className="btn btn-primary btn-sm">
+            Scan Barcode
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleBarcodeImage}
+              style={{ display: 'none' }}
+            />
+          </label>
         </div>
 
         {/* SCAN UI */}
@@ -352,14 +472,22 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
               {rows.map((row, rowIndex) => (
                 <div className="row mb-1" key={rowIndex}>
                   <div className="col">
-                    <select className='form-select' value={row.type} onChange={(e) => updateRow(sectionIndex, rowIndex, 'type', e.target.value)}>
-                      <option>Protein</option>
-                      <option>Fat</option>
-                      <option>Carbohydrate</option>
-                      <option>Carbs as Sugar</option>
-                      <option>Fibre</option>
-                      <option>Salt</option>
-                    </select>
+                    <input
+                      list={`nutrient-options-${sectionIndex}-${rowIndex}`}
+                      className="form-control"
+                      value={row.type}
+                      onChange={(e) => {
+                        const newType = normalizeNutrient(e.target.value);
+                        updateRow(sectionIndex, rowIndex, 'type', newType);
+                      }}
+                    />
+                    <datalist id={`nutrient-options-${sectionIndex}-${rowIndex}`}>
+                      {ALLOWED_NUTRIENTS.map(n => (
+                        <option key={n} value={n} />
+                      ))}
+                    </datalist>
+
+
                   </div>
                   <div className="col">
                     <input type="number" className="form-control" value={row.count} onChange={(e) => updateRow(sectionIndex, rowIndex, 'count', e.target.value)} />

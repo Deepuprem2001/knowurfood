@@ -8,32 +8,42 @@ function NutritionDonutChart({ meals, selectedDate }) {
   const today = selectedDate || new Date().toISOString().split('T')[0];
   const mealsToday = meals.filter(meal => meal.date === today);
 
+  // Step 1: Define allowed nutrient types (from MealCard)
+  const ALLOWED = ['Protein', 'Fat', 'Carbohydrate', 'Sugar', 'Fibre', 'Salt', 'Caffeine'];
+
+  // Step 2: Normalize and aggregate nutrient totals
   const totals = {};
   mealsToday.forEach(meal => {
     meal.foodItems.forEach(item => {
       item.nutrients.forEach(n => {
-        const value = parseFloat(n.total) || 0;
-        totals[n.type] = (totals[n.type] || 0) + value;
+        const type = n.type?.toLowerCase();
+        if (!type || type.includes('kcal') || type.includes('calorie')) return; // ❌ Exclude kcal
+        const normalized = type.charAt(0).toUpperCase() + type.slice(1); // Capitalize
+        if (ALLOWED.includes(normalized)) {
+          const value = parseFloat(n.total) || 0;
+          totals[normalized] = (totals[normalized] || 0) + value;
+        }
       });
     });
   });
 
-  const protein = totals.Protein || 0;
-  const fat = totals.Fat || 0;
-  const carbs = totals.Carbohydrate || 0;
-  const sugar = totals["Carbs as Sugar"] || 0;
+  // Step 3: Sort by highest values and keep top 4
+  const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+  const top4 = sorted.slice(0, 4);
+  const others = sorted.slice(4);
 
-  const others = Object.entries(totals)
-    .filter(([key]) => !["Protein", "Fat", "Carbohydrate", "Carbs as Sugar"].includes(key))
-    .reduce((sum, [, val]) => sum + val, 0);
+  // Step 4: Build chart entries
+  const entries = top4.map(([label, value], i) => ({
+    label,
+    value,
+    color: ['#4CAF50', '#FF9800', '#03A9F4', 'teal'][i % 4]
+  }));
 
-  // Only include nutrients with non-zero values
-  const entries = [];
-  if (protein > 0) entries.push({ label: 'Protein', value: protein, color: '#4CAF50' });
-  if (fat > 0)     entries.push({ label: 'Fat', value: fat, color: '#FF9800' });
-  if (carbs > 0)   entries.push({ label: 'Carbohydrate', value: carbs, color: '#03A9F4' });
-  if (sugar > 0)   entries.push({ label: 'Carbs as Sugar', value: sugar, color: 'teal' });
-  if (others > 0)  entries.push({ label: 'Others', value: others, color: 'gray' });
+  if (others.length > 0) {
+    const sum = others.reduce((acc, [, val]) => acc + val, 0);
+    entries.push({ label: 'Others', value: sum, color: 'gray' });
+  }
+
 
   const data = {
     labels: entries.map(e => e.label),

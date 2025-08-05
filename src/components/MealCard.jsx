@@ -2,18 +2,21 @@ import React from 'react';
 import { useSwipeable } from 'react-swipeable';
 import { motion } from 'framer-motion';
 
-function MealCard({ name, nutrients, onEdit, onDelete, unit = 'g', disableSwipe }) {
+function MealCard({ name, nutrients, kcal = null, onEdit, onDelete, unit = 'g', disableSwipe }) {
   const [swipeAction, setSwipeAction] = React.useState(null);
 
-  const getCalories = () => {
-    let total = 0;
+  const getCalories = (nutrients = []) => {
+    let kcal = 0;
     nutrients.forEach(n => {
-      const val = parseFloat(n.total) || 0;
-      if (n.type === "Carbohydrate" || n.type === "Protein") total += val * 4;
-      if (n.type === "Fat") total += val * 9;
+      const c = parseFloat(n.count || 0);
+      if (n.type?.toLowerCase() === 'fat') kcal += c * 9;
+      if (n.type?.toLowerCase() === 'protein') kcal += c * 4;
+      if (n.type?.toLowerCase().includes('carbohydrate')) kcal += c * 4;
     });
-    return Math.round(total);
+    return Math.round(kcal);
   };
+
+  const displayCalories = kcal ?? getCalories(nutrients); // Use prop if available
 
   const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -42,7 +45,6 @@ function MealCard({ name, nutrients, onEdit, onDelete, unit = 'g', disableSwipe 
 
   return (
     <div {...handlers} className="position-relative mb-2">
-      {/* Overlay Icons */}
       {swipeAction === 'left' && (
         <div className="position-absolute top-50 start-100 translate-middle-y text-danger fw-bold" style={{ zIndex: 1 }}>
           🗑️
@@ -54,25 +56,26 @@ function MealCard({ name, nutrients, onEdit, onDelete, unit = 'g', disableSwipe 
         </div>
       )}
 
-      {/* Swipeable Card */}
       <motion.div
         initial={{ x: 0 }}
         animate={{ x: swipeAction === 'left' ? -100 : swipeAction === 'right' ? 100 : 0 }}
         transition={{ duration: 0.3 }}
         className="meal-card text-white p-3 rounded shadow-sm"
-        style={{backgroundColor:'#00bfff17'}}
+        style={{ backgroundColor: '#00bfff17' }}
       >
         <p className="MealCardText mb-1 fw-bold">{name}</p>
-        <p className="MealCardText mb-1">Calories: {getCalories()} kcal</p>
-        {nutrients.map((n, i) => (
-          <p key={i} className="MealCardText mb-1">
-            {capitalize(n.type)}: {n.total} {unit}
-          </p>
+        <p className="MealCardText mb-1">Calories: {displayCalories} kcal</p>
+
+        {nutrients
+          .filter(n =>
+            ['protein', 'fat', 'carbohydrate', 'sugar', 'sugars', 'fibre', 'fiber', 'salt', 'caffeine']
+              .includes(n.type?.toLowerCase())
+          )
+          .map((n, i) => (
+            <p key={i} className="MealCardText mb-1">
+              {capitalize(n.type)}: {n.total} {unit}
+            </p>
         ))}
-        {/* <div className="d-flex justify-content-end gap-2 mt-2">
-          <button className="btn btn-warning btn-sm" onClick={onEdit}>Edit</button>
-          <button className="btn btn-danger btn-sm" onClick={onDelete}>Delete</button>
-        </div> */}
       </motion.div>
     </div>
   );

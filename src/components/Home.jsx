@@ -100,12 +100,14 @@ function Home({ meals, onEditMeal, onDeleteMeal, user }) {
                   key={`${type}-${meal.id}-${i}`}
                   name={item.name}
                   nutrients={item.nutrients}
+                  kcal={meal.kcal || null}  // ✅ pass kcal to MealCard
                   onEdit={() => onEditMeal(meal)}
                   onDelete={() => onDeleteMeal(meal.id)}
                   unit={user.unit || 'g'}
                 />
               ))
             )}
+
           </div>
         ))}
       </div>

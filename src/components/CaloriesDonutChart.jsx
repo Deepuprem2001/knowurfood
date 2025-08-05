@@ -9,14 +9,20 @@ function CalorieDonutChart({ meals, selectedDate, goal = 2000 }) {
   const mealsToday = meals.filter(meal => meal.date === today);
 
   const caloriesToday = mealsToday.reduce((total, meal) => {
+    if (meal.kcal) {
+      return total + meal.kcal;
+    }
+
+    let mealKcal = 0;
     meal.foodItems.forEach(item => {
       item.nutrients.forEach(n => {
         const val = parseFloat(n.total) || 0;
-        if (n.type === "Carbohydrate" || n.type === "Protein") total += val * 4;
-        if (n.type === "Fat") total += val * 9;
+        if (n.type === "Carbohydrate" || n.type === "Protein") mealKcal += val * 4;
+        if (n.type === "Fat") mealKcal += val * 9;
       });
     });
-    return total;
+
+    return total + mealKcal;
   }, 0);
 
   const roundedCalories = Math.round(caloriesToday)

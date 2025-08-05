@@ -315,3 +315,14 @@ body {
 .form-control::placeholder {
   color: #ffffffa6;      /* Light gray placeholder text */
 }
+
+video {
+  height: 100% !important;
+}
+
+#barcode-scanner {
+  width: 100%;
+  height: 300px; /* or 40vh */
+  background: black;
+  border-radius: 10px;
+}
