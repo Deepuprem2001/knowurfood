@@ -192,7 +192,7 @@ function AuthPage({ onLoginSuccess }) {
             <>
               <div className="form-row"><label>Email</label><input type="email" className="form-control" value={username} onChange={(e) => setUsername(e.target.value)} required /></div>
               <div className="form-row"><label>Password</label><input type={showPassword ? 'text' : 'password'} className="form-control" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
-              <button type="submit" className="btn btn-primary w-100 mt-3 mb-2">Login</button>
+              <button type="submit" className="btn btn-primary w-100 mt-3 mb-2" onClick={handleSubmit}>Login</button>
             </>
           ) : (
             <div className={`fade-step step-${step}`}>
