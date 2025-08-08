@@ -1,5 +1,4 @@
 body {
-  font-family: Arial, sans-serif;
   background-color: #333333;
 }
 
@@ -325,4 +324,48 @@ video {
   height: 300px; /* or 40vh */
   background: black;
   border-radius: 10px;
+}
+
+.toast {
+  border-radius: 6px;
+  min-width: 250px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+.bmi-progress .progress-bar {
+  transition: width 0.6s ease;
+}
+
+/* Color bars for BMI categories */
+.underweight-bar {
+  background-color: #03a9f4; /* blue */
+}
+.normal-bar {
+  background-color: #4caf50; /* green */
+}
+.overweight-bar {
+  background-color: #ffc107; /* amber */
+}
+.obese-bar {
+  background-color: #f44336; /* red */
+}
+
+/* Tab transition */
+.tab-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.tab-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 200ms ease-in-out;
+}
+.tab-transition-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+.tab-transition-exit-active {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 200ms ease-in-out;
 }

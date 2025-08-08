@@ -8,7 +8,7 @@ import ProfileTab from './components/ProfileTab';
 import SuggestionsTab from './components/SuggestionsTab';
 import { deleteAllMeals } from './services/dbService';
 import logo from '../src/assets/Logo.png';
-
+import { CSSTransition, SwitchTransition } from 'react-transition-group';
 import './App.css';
 
 import {
@@ -32,10 +32,15 @@ function App() {
   const [showToast, setShowToast] = useState(false);
   const [loading, setLoading] = useState(true);
   const hasShownSplash = useRef(false);
+  const nodeRef = useRef(null);
+  const [authReady, setAuthReady] = useState(false); // ✅ new state
+
 
   useEffect(() => {
     const loadUserAndMeals = async () => {
       const user = await getCurrentUser();
+      setCurrentUser(user || null);
+      setAuthReady(true); // ✅ auth is now ready
       if (user) {
         setCurrentUser(user);
         const data = await getAllMeals(user.uid);
@@ -56,34 +61,16 @@ function App() {
   }, []);
 
   // ✅ Step 5B: Meal-time notifications
-  useEffect(() => {
-    if (!('Notification' in window) || !currentUser) return;
-
-    Notification.requestPermission().then((perm) => {
-      if (perm !== 'granted') return;
-
-      const interval = setInterval(() => {
-        const now = new Date();
-        const currentTime = now.toTimeString().substring(0, 5); // "HH:MM"
-        const { breakfastTime, lunchTime, dinnerTime } = currentUser;
-
-        const timeMap = {
-          [breakfastTime]: '🍳 Time for breakfast! Log your meal!',
-          [lunchTime]: '🥗 Time for lunch! Don’t forget to log it!',
-          [dinnerTime]: '🍝 Time for dinner! Keep tracking!',
-        };
-
-        if (timeMap[currentTime]) {
-          new Notification('KnowUrFood Reminder', {
-            body: timeMap[currentTime],
-            icon: '/vite.svg' // Or your actual logo path
-          });
-        }
-      }, 60000); // Check every minute
-
-      return () => clearInterval(interval);
+useEffect(() => {
+  if ("Notification" in window && currentUser) {
+    Notification.requestPermission().then((permission) => {
+      if (permission === "granted") {
+        scheduleMealReminders(currentUser);
+      }
     });
-  }, [currentUser]);
+  }
+}, [currentUser]);
+
 
   const handleLoginSuccess = async (user) => {
     setCurrentUser(user);
@@ -127,6 +114,42 @@ function App() {
     setMeals([]);
   };
 
+  function scheduleMealReminders(user) {
+  const meals = [
+    { label: "Breakfast", time: user.breakfastTime || "08:00" },
+    { label: "Lunch", time: user.lunchTime || "13:00" },
+    { label: "Dinner", time: user.dinnerTime || "19:00" },
+  ];
+
+  meals.forEach(({ label, time }) => {
+    const [hour, minute] = time.split(":").map(Number);
+    const now = new Date();
+    const target = new Date();
+
+    target.setHours(hour, minute, 0, 0);
+
+    // If time already passed today, schedule for tomorrow
+    if (target <= now) target.setDate(target.getDate() + 1);
+
+    const timeout = target.getTime() - now.getTime();
+
+    setTimeout(() => {
+      new Notification(`${label} Reminder 🍽️`, {
+        body: `It's time to log your ${label.toLowerCase()}!`,
+      });
+    }, timeout);
+  });
+}
+
+
+  if (!authReady || loading) {
+  return (
+    <div className="d-flex justify-content-center align-items-center vh-100 bg-black">
+      <img src={logo} alt="Logo" style={{ width: '150px', height: '150px' }} />
+    </div>
+  );
+}
+
   if (!currentUser) {
     return <AuthPage onLoginSuccess={handleLoginSuccess} />;
   }
@@ -140,7 +163,15 @@ function App() {
   }
 
   return (
-    <>
+  <SwitchTransition mode="out-in">
+  <CSSTransition
+    key={activeTab} // 🔑 triggers transition when tab changes
+    timeout={300} // ⏱ duration for enter/exit animations
+    classNames="tab-transition" // 👕 links to CSS classes
+    unmountOnExit
+    nodeRef={nodeRef}
+  >
+    <div style={{height:'100%'}} ref={nodeRef}>
       {activeTab === 'dashboard' && (
         <Dashboard
           user={currentUser}
@@ -229,13 +260,16 @@ function App() {
       )}
 
       {showToast && (
-        <div className="toast-container position-fixed bottom-0 end-0 p-3" style={{ zIndex: 9999 }}>
+        <div className="toast-container position-fixed top-0 start-50 translate-middle-x p-3"
+            style={{ zIndex: 9999 }}>
           <div className="toast show bg-success text-white">
-            <div className="toast-body fw-bold">{toastMessage}</div>
+            <div className="toast-body fw-bold text-center">{toastMessage}</div>
           </div>
         </div>
       )}
-    </>
+    </div>
+    </CSSTransition>
+    </SwitchTransition>
   );
 }
 

@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/library'; // NEW
 import WeightLogger from './WeightLogger';
+import { useToast } from '../contexts/ToastContext'; // adjust path if needed
+import Tesseract from 'tesseract.js';
+import { parseNutritionFromText } from '../utils/mlparser'; // Adjust path if needed
+
 
 function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
   const [mealType, setMealType] = useState('Breakfast');
@@ -13,13 +17,13 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
   const videoRef = useRef(null);
 
   const [mode, setMode] = useState(null); // 'meal' or 'weight'
-  const [weight, setWeight] = useState('');
-  const [weightDate, setWeightDate] = useState(new Date().toISOString().split('T')[0]);
   
   const [scannedKcal, setScannedKcal] = useState(null);
 
+  const { showToast } = useToast();
 
-  const toTitleCase = str => str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.slice(1));
+  const [barcodeFallbackPrompt, setBarcodeFallbackPrompt] = useState(false);
+
 
   useEffect(() => {
     if (editMeal) {
@@ -140,7 +144,7 @@ const resetModel = () => {
         videoRef.current.play();
       }
     } catch (err) {
-      alert('Camera access denied.');
+      showToast('Camera access denied.');
       setScanning(false);
     }
   };
@@ -157,7 +161,7 @@ const resetModel = () => {
   const captureAndScan = () => {
     const video = videoRef.current;
     if (!video || video.videoWidth === 0) {
-      alert("Camera not ready yet. Wait a moment.");
+      showToast("Camera not ready yet. Wait a moment.");
       return;
     }
 
@@ -183,7 +187,7 @@ const resetModel = () => {
         setFoodSections([parsed]);
         switchMode('manual');
       } else {
-        alert("No nutritional values detected. Try again or enter manually.");
+        showToast("No nutritional values detected. Try again or enter manually.");
       }
       stopScan();
     });
@@ -225,7 +229,7 @@ const resetModel = () => {
       setFoodSections(updated);
       switchMode('auto');
     } catch (err) {
-      alert("⚠️ Could not fetch nutrition info. Try a more specific food name.");
+      showToast("⚠️ Could not fetch nutrition info. Try a more specific food name.");
     }
   };
 
@@ -242,9 +246,9 @@ const resetModel = () => {
     try {
       const result = await codeReader.decodeFromImageElement(img);
       await fetchNutritionByBarcode(result.getText());
-    } catch (error) {
-      alert('❌ Could not decode barcode.');
-      console.error(error);
+    } catch {
+        setBarcodeFallbackPrompt(true); // state toggle for showing modal
+
     }
   };
   };
@@ -255,7 +259,7 @@ const resetModel = () => {
     const data = await res.json();
 
     if (data.status === 0) {
-      alert('❌ Product not found.');
+      showToast('❌ Product not found.');
       return;
     }
 
@@ -289,10 +293,38 @@ const resetModel = () => {
     switchMode('manual');
 
   } catch (err) {
-    alert("⚠️ Nutrition fetch failed.");
+    showToast("⚠️ Nutrition fetch failed.");
     console.error(err);
   }
   };
+
+  const handleOCRImage = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const img = new Image();
+  img.src = URL.createObjectURL(file);
+
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+
+    Tesseract.recognize(canvas, 'eng').then(({ data: { text } }) => {
+      const parsed = parseNutritionFromText(text);
+      if (parsed.length > 0) {
+        setFoodSections([parsed]);
+        setShowManualEntry(true);
+        showToast("✅ Nutrients extracted from label", "success");
+      } else {
+        showToast("⚠️ Could not detect nutrients. Try again or enter manually.", "warning");
+      }
+    });
+  };
+};
+
 
   const calculateCalories = (foodItems) => {
   let total = 0;
@@ -387,6 +419,32 @@ const resetModel = () => {
             />
           </label>
         </div>
+
+        {barcodeFallbackPrompt && (
+  <div className="modal-backdrop">
+    <div className="modal-container bg-dark text-white p-4 text-center">
+      <h5 className="mb-3">Barcode not recognized</h5>
+      <p>Would you like to try scanning the nutrition label instead?</p>
+      <div className="d-flex justify-content-center gap-3">
+        <button className="btn btn-secondary" onClick={() => setBarcodeFallbackPrompt(false)}>Cancel</button>
+        <label className="btn btn-primary">
+          📷 Scan Label
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={(e) => {
+              handleOCRImage(e); // same function you just fixed
+              setBarcodeFallbackPrompt(false); // close prompt after scan
+            }}
+            style={{ display: 'none' }}
+          />
+        </label>
+      </div>
+    </div>
+  </div>
+)}
+
 
         {/* SCAN UI */}
         {scanning && (

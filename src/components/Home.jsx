@@ -43,6 +43,24 @@ function Home({ meals, onEditMeal, onDeleteMeal, user }) {
     return d.toLocaleDateString('en-GB');
   };
 
+  const calculateBMI = (weight, height) => {
+  if (!weight || !height) return null;
+  const h = height / 100;
+  return weight / (h * h);
+};
+
+const getBMICategory = (bmi) => {
+  if (bmi < 18.5) return 'Underweight';
+  if (bmi < 25) return 'Normal';
+  if (bmi < 30) return 'Overweight';
+  return 'Obese';
+};
+
+const bmi = calculateBMI(user.currentWeight, user.height);
+const bmiCategory = getBMICategory(bmi);
+const bmiPercent = Math.min((bmi / 40) * 100, 100); // scale to 100%
+
+
   return (
     <div className="home-container">
       <div className="d-flex align-items-center justify-content-between flex-wrap mb-3">
@@ -77,6 +95,34 @@ function Home({ meals, onEditMeal, onDeleteMeal, user }) {
       </div>
 
       <WeightLineChart user={user} />
+
+      {bmi && (
+        <div className="card bg-dark text-white p-3 mb-3 shadow-sm text-center">
+          <h6 className="fw-bold mb-2 SubTitleName">Your BMI</h6>
+          <p className="fs-5 mb-1">
+            {bmi.toFixed(1)} – <span className="fw-bold text-info">{bmiCategory}</span>
+          </p>
+          
+          <div className="progress bmi-progress mb-1" style={{ height: '15px' }}>
+            <div
+              className={`progress-bar ${bmiCategory.toLowerCase()}-bar`}
+              role="progressbar"
+              style={{ width: `${bmiPercent}%` }}
+              aria-valuenow={bmiPercent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            ></div>
+          </div>
+
+          <div className="d-flex justify-content-between text-muted small px-2">
+            <span>Underweight</span>
+            <span>Normal</span>
+            <span>Overweight</span>
+            <span>Obese</span>
+          </div>
+        </div>
+      )}
+
 
 
       <div className="TodayChartsSection col-md-12">

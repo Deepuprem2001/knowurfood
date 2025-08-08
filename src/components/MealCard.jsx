@@ -51,7 +51,7 @@ function MealCard({ name, nutrients, kcal = null, onEdit, onDelete, unit = 'g', 
         </div>
       )}
       {swipeAction === 'right' && (
-        <div className="position-absolute top-50 start-0 translate-middle-y text-warning fw-bold" style={{ zIndex: 1 }}>
+        <div className="position-absolute top-50 start-20 translate-middle-y text-warning fw-bold" style={{ zIndex: 1 }}>
           🖊️
         </div>
       )}
@@ -59,7 +59,7 @@ function MealCard({ name, nutrients, kcal = null, onEdit, onDelete, unit = 'g', 
       <motion.div
         initial={{ x: 0 }}
         animate={{ x: swipeAction === 'left' ? -100 : swipeAction === 'right' ? 100 : 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.75 }}
         className="meal-card text-white p-3 rounded shadow-sm"
         style={{ backgroundColor: '#00bfff17' }}
       >

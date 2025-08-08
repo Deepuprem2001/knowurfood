@@ -66,6 +66,11 @@ button:focus-visible {
   border: none;
 }
 
+body {
+  font-family: 'Inter', sans-serif !important;
+}
+
+
 
 @media (prefers-color-scheme: light) {
   :root {
