@@ -24,6 +24,20 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
 
   const [barcodeFallbackPrompt, setBarcodeFallbackPrompt] = useState(false);
 
+  const servingOptions = [
+    { label: "100 g", value: 100 },
+    { label: "slice (30 g)", value: 30 },
+    { label: "cup (200 ml)", value: 200 },
+    { label: "package (250 g)", value: 250 },
+  ];
+
+  const [quantity, setQuantity] = useState(1);
+  const [selectedServing, setSelectedServing] = useState(servingOptions[0].value);
+  const [customServing, setCustomServing] = useState(0);
+
+  const servingInGrams = selectedServing === "custom" ? customServing : selectedServing;
+  const multiplier = servingInGrams > 0 ? (quantity * servingInGrams) / 100 : 1;
+
 
   useEffect(() => {
     if (editMeal) {
@@ -495,11 +509,13 @@ const resetModel = () => {
       <div className='TotalFoodSection'>
         {foodSections.map((rows, sectionIndex) => (
           <div className="food-section" key={sectionIndex}>
+            
+            {/* Food name + auto-fill button */}
             <div className='FoodNameSection d-flex align-items-center gap-2'>
               <textarea
                 className='FoodNameTextArea'
                 value={foodNames[sectionIndex]}
-                style={{width:'100%'}}
+                style={{ width: '100%' }}
                 onChange={(e) => {
                   const updated = [...foodNames];
                   updated[sectionIndex] = e.target.value;
@@ -510,7 +526,7 @@ const resetModel = () => {
               {showAuto && (
                 <button
                   className="btn btn-sm btn-info"
-                  style={{ fontSize: '12px', width:'35%' }}
+                  style={{ fontSize: '12px', width: '35%' }}
                   onClick={() => fetchNutritionByFoodName(foodNames[sectionIndex], sectionIndex)}
                 >
                   🔍 Auto-Fill
@@ -518,59 +534,106 @@ const resetModel = () => {
               )}
             </div>
 
+            {/* Serving controls (global for this section) */}
+            <div className="d-flex align-items-center mb-3 mt-2">
+              <input
+                type="number"
+                min="0.1"
+                step="0.1"
+                value={quantity}
+                onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
+                className="form-control me-2"
+                style={{ width: "80px" }}
+              />
+              <select
+                className="form-select"
+                value={selectedServing}
+                onChange={(e) => setSelectedServing(e.target.value)}
+                style={{ flex: 1 }}
+              >
+                {servingOptions.map((opt, i) => (
+                  <option key={i} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Table headers */}
             <div className="row fw-bold mb-2 text-white" style={{ fontSize: '12px', padding: '0 10px' }}>
               <div className="col">Type</div>
-              <div className="col">Count</div>
-              <div className="col">Servings</div>
+              <div className="col">Count (per 100g)</div>
               <div className="col">Total</div>
               <div className="col">Remove</div>
             </div>
 
+            {/* Nutrient rows */}
             <div className='SplitTable'>
-              {rows.map((row, rowIndex) => (
-                <div className="row mb-1" key={rowIndex}>
-                  <div className="col">
-                    <input
-                      list={`nutrient-options-${sectionIndex}-${rowIndex}`}
-                      className="form-control"
-                      value={row.type}
-                      onChange={(e) => {
-                        const newType = normalizeNutrient(e.target.value);
-                        updateRow(sectionIndex, rowIndex, 'type', newType);
-                      }}
-                    />
-                    <datalist id={`nutrient-options-${sectionIndex}-${rowIndex}`}>
-                      {ALLOWED_NUTRIENTS.map(n => (
-                        <option key={n} value={n} />
-                      ))}
-                    </datalist>
+              {rows.map((row, rowIndex) => {
+                const servingInGrams = selectedServing === "custom" ? customServing : selectedServing;
+                const multiplier = servingInGrams > 0 ? (quantity * servingInGrams) / 100 : 1;
 
+                return (
+                  <div className="row mb-1" key={rowIndex}>
+                    <div className="col">
+                      <input
+                        list={`nutrient-options-${sectionIndex}-${rowIndex}`}
+                        className="form-control"
+                        value={row.type}
+                        onChange={(e) => {
+                          const newType = normalizeNutrient(e.target.value);
+                          updateRow(sectionIndex, rowIndex, 'type', newType);
+                        }}
+                      />
+                      <datalist id={`nutrient-options-${sectionIndex}-${rowIndex}`}>
+                        {ALLOWED_NUTRIENTS.map(n => (
+                          <option key={n} value={n} />
+                        ))}
+                      </datalist>
+                    </div>
 
+                    <div className="col">
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={row.count}
+                        onChange={(e) => updateRow(sectionIndex, rowIndex, 'count', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="col">
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={(parseFloat(row.count || 0) * multiplier).toFixed(2)}
+                        disabled
+                      />
+                    </div>
+
+                    <div className="col text-center">
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => removeRow(sectionIndex, rowIndex)}
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
-                  <div className="col">
-                    <input type="number" className="form-control" value={row.count} onChange={(e) => updateRow(sectionIndex, rowIndex, 'count', e.target.value)} />
-                  </div>
-                  <div className="col">
-                    <select className='form-select' value={row.serving} onChange={(e) => updateRow(sectionIndex, rowIndex, 'serving', e.target.value)}>
-                      {[...Array(10)].map((_, i) => (<option key={i + 1}>{i + 1}</option>))}
-                    </select>
-                  </div>
-                  <div className="col">
-                    <input type="number" className="form-control" value={row.total} disabled />
-                  </div>
-                  <div className="col text-center">
-                    <button className="btn btn-danger btn-sm" onClick={() => removeRow(sectionIndex, rowIndex)}>×</button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
+
+            {/* Add nutrient row */}
             <button className="AddItemButton mt-1" onClick={() => addRow(sectionIndex)}>Add Nutrient</button>
           </div>
         ))}
+
+        {/* Add food section */}
         <button className="AddItemButton mt-3" onClick={addFoodSection}>Add Food Item</button>
       </div>
     );
   }
+
 }
 
 export default AddMealModal;

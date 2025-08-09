@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import CaloriesBarChart from './CaloriesBarChart';
 import CalorieDonutChart from './CaloriesDonutChart';
 import NutritionDonutChart from './NutritionDonutChart';
@@ -6,6 +6,7 @@ import MealCard from './MealCard';
 import WeightLogger from './WeightLogger'; // ✅ NEW IMPORT
 import WeightLineChart from './WeightLineChart'; // ✅ NEW IMPORT
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
+import { getWeightLogs } from '../services/dbService';
 
 const getXPProgress = (xp) => {
   const level = Math.floor(xp / 100) + 1;
@@ -18,6 +19,20 @@ const getXPProgress = (xp) => {
 function Home({ meals, onEditMeal, onDeleteMeal, user }) {
   const { level, currentXP, nextXP, percent } = getXPProgress(user.xp || 0);
   const selectedDate = new Date().toISOString().split('T')[0];
+  const [latestWeight, setLatestWeight] = useState(user.currentWeight || null);
+
+  useEffect(() => {
+  if (user?.uid) {
+    getWeightLogs(user.uid).then(logs => {
+      if (logs.length > 0) {
+        // assuming logs are sorted newest first; if not, sort by date
+        const mostRecent = [...logs].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+        setLatestWeight(mostRecent.weight);
+        }
+      });
+    }
+  }, [user]);
+
 
   const getMealsByType = (type) => {
     return meals.filter((meal) => meal.mealType === type && meal.date === selectedDate);
@@ -56,7 +71,7 @@ const getBMICategory = (bmi) => {
   return 'Obese';
 };
 
-const bmi = calculateBMI(user.currentWeight, user.height);
+const bmi = calculateBMI(latestWeight, user.height);
 const bmiCategory = getBMICategory(bmi);
 const bmiPercent = Math.min((bmi / 40) * 100, 100); // scale to 100%
 
