@@ -8,8 +8,19 @@ function SuggestionsTab({ meals, user }) {
   const [lastWeek, setLastWeek] = useState({});
   const [behindSchedule, setBehindSchedule] = useState(false); // ✅ alert state
 
-  const startOfWeek = new Date();
-  startOfWeek.setDate(startOfWeek.getDate() - 6);
+  // ✅ Always show last week's Monday → Sunday range in chart
+  const today = new Date();
+  const currentDay = today.getDay(); // 0=Sun, 1=Mon...
+  const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+
+  const thisWeekMonday = new Date(today);
+  thisWeekMonday.setDate(today.getDate() + diffToMonday);
+
+  const lastWeekMonday = new Date(thisWeekMonday);
+  lastWeekMonday.setDate(thisWeekMonday.getDate() - 7);
+
+  const lastWeekSunday = new Date(lastWeekMonday);
+  lastWeekSunday.setDate(lastWeekMonday.getDate() + 6);
 
   const nutrientTargets = {
     Protein: 50 * 7,
@@ -20,16 +31,12 @@ function SuggestionsTab({ meals, user }) {
     Salt: 6 * 7,
   };
 
-  const getWeekRange = (offset = 0) => {
-    const today = new Date();
-    const end = new Date(today.setDate(today.getDate() - offset));
-    const start = new Date(end);
-    start.setDate(end.getDate() - 6);
+  const getWeekRange = (start, end) => {
     const days = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      days.push(d.toISOString().split('T')[0]);
+    const date = new Date(start);
+    while (date <= end) {
+      days.push(date.toISOString().split('T')[0]);
+      date.setDate(date.getDate() + 1);
     }
     return days;
   };
@@ -62,8 +69,8 @@ function SuggestionsTab({ meals, user }) {
   };
 
   useEffect(() => {
-    const thisWeekDays = getWeekRange(0);
-    const lastWeekDays = getWeekRange(7);
+    const thisWeekDays = getWeekRange(thisWeekMonday, new Date(thisWeekMonday.getTime() + 6 * 86400000));
+    const lastWeekDays = getWeekRange(lastWeekMonday, lastWeekSunday);
 
     setThisWeek(computeAverages(thisWeekDays));
     setLastWeek(computeAverages(lastWeekDays));
@@ -124,8 +131,10 @@ function SuggestionsTab({ meals, user }) {
       )}
 
       <div className="CalBarCharSection bg-dark mb-2">
-        <p className="SubTitleName mb-2">Weekly Calorie Trend</p>
-        <CaloriesBarChart meals={meals} startOfWeek={startOfWeek} />
+        <p className="SubTitleName mb-2">
+          Last Week's Calories ({lastWeekMonday.toLocaleDateString()} - {lastWeekSunday.toLocaleDateString()})
+        </p>
+        <CaloriesBarChart meals={meals} startOfWeek={lastWeekMonday} />
       </div>
 
       <div className="NutritionProgressSection mb-2 bg-dark list-group" style={{ padding: '5%' }}>

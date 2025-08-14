@@ -16,6 +16,8 @@ import {
   browserSessionPersistence
 } from 'firebase/auth';
 
+import { getUserProfile } from '../services/firestoreService';
+
 function AuthPage({ onLoginSuccess }) {
   const [mode, setMode] = useState('login');
   const [step, setStep] = useState(1);
@@ -147,23 +149,27 @@ function AuthPage({ onLoginSuccess }) {
           age: parseInt(age),
           gender
         });
-      } else {
-        // ✅ LOGIN WITH REMEMBER ME PERSISTENCE
-        const auth = getAuth();
-        const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
-        await setPersistence(auth, persistenceType);
-        const result = await signInWithEmailAndPassword(auth, username, password);
-
-        // store rememberMe flag
-        if (rememberMe) {
-          localStorage.setItem("rememberMe", "true");
         } else {
-          localStorage.removeItem("rememberMe");
+          const auth = getAuth();
+          const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+          await setPersistence(auth, persistenceType);
+
+          const result = await signInWithEmailAndPassword(auth, username, password);
+          const authUser = result.user;
+
+          // store rememberMe flag
+          if (rememberMe) {
+            localStorage.setItem("rememberMe", "true");
+          } else {
+            localStorage.removeItem("rememberMe");
+          }
+
+          // ✅ Fetch Firestore profile immediately
+          const profile = await getUserProfile(authUser.uid);
+
+          // ✅ Merge and send full profile to App
+          user = { uid: authUser.uid, email: authUser.email, ...profile };
         }
-
-        user = result.user;
-      }
-
       onLoginSuccess(user);
     } catch (err) {
       setError(err.message);

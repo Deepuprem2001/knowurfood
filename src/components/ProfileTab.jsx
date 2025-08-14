@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAuth, updateEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { updateUserProfile } from '../services/dbService';
+import { useToast } from '../contexts/ToastContext';
 
 function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
   const [firstName, setFirstName] = useState('');
@@ -24,6 +25,8 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
   const [newPassword, setNewPassword] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [updating, setUpdating] = useState(false);
+
+  const { showToast } = useToast();
 
   const level = user.level || 1;
   const xp = user.xp || 0;
@@ -69,7 +72,7 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
       dinnerTime,
     };
     await updateUserProfile(user.uid, prefs);
-    alert('✅ Preferences updated successfully!');
+    showToast('Preferences updated successfully!', "success");
   };
 
   const exportJSON = () => {
@@ -80,35 +83,41 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
     link.click();
   };
 
-  const exportCSV = () => {
-    if (!meals || meals.length === 0) {
-      alert("No meals to export.");
-      return;
-    }
+const exportCSV = () => {
+  if (!meals || meals.length === 0) {
+    showToast("⚠️ No meals to export.", "warning");
+    return;
+  }
 
-    const rows = [["Date", "Meal Type", "Food Name", "Fat (g)", "Carbs (g)", "Protein (g)", "Quantity", "Unit"]];
-    meals.forEach(meal => {
-      meal.foodItems.forEach(item => {
-        rows.push([
-          meal.date,
-          meal.mealType,
-          item.name,
-          item.nutrients?.fat || '',
-          item.nutrients?.carbs || '',
-          item.nutrients?.protein || '',
-          item.quantity || '',
-          unit,
-        ]);
-      });
+  const rows = [["Date", "Meal Type", "Food Name", "Fat (g)", "Carbs (g)", "Protein (g)", "Quantity", "Unit"]];
+
+  meals.forEach(meal => {
+    meal.foodItems.forEach(item => {
+      const fat = item.nutrients.find(n => n.type.toLowerCase() === 'fat')?.total || '';
+      const carbs = item.nutrients.find(n => n.type.toLowerCase() === 'carbohydrate')?.total || '';
+      const protein = item.nutrients.find(n => n.type.toLowerCase() === 'protein')?.total || '';
+
+      rows.push([
+        meal.date,
+        meal.mealType,
+        item.name,
+        fat,
+        carbs,
+        protein,
+        item.quantity || '',
+        unit
+      ]);
     });
+  });
 
-    const csvContent = rows.map(row => row.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "meals.csv";
-    link.click();
-  };
+  const csvContent = rows.map(row => row.join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "meals.csv";
+  link.click();
+};
+
 
   const confirmClear = async () => {
     const confirm = window.confirm("⚠️ Are you sure you want to clear all meal data?");
@@ -116,13 +125,13 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
       setClearing(true);
       await clearAllMeals();
       setClearing(false);
-      alert("✅ All meals deleted.");
+      showToast("All meals deleted.", "success");
     }
   };
 
   const handleUpdateEmailPassword = async () => {
     if (!newEmail && !newPassword) {
-      alert("Please enter a new email or password.");
+      showToast("Please enter a new email or password.", "warning");
       return;
     }
 
@@ -141,12 +150,12 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
       if (newEmail) {
         await updateEmail(currentUser, newEmail);
         await updateUserProfile(currentUser.uid, { email: newEmail });
-        alert("✅ Email updated.");
+        showToast("Email updated.", "success");
       }
 
       if (newPassword) {
         await updatePassword(currentUser, newPassword);
-        alert("✅ Password updated.");
+        showToast("Password updated.", "success");
       }
 
       setNewEmail('');
@@ -154,7 +163,7 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
       setCurrentPassword('');
     } catch (error) {
       console.error(error);
-      alert(`❌ ${error.message}`);
+      showToast(`${error.message}`, "danger");
     } finally {
       setUpdating(false);
     }
@@ -237,10 +246,6 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
             <option>g</option><option>mg</option><option>kcal</option>
           </select>
         </div>
-        <div className="form-check form-switch mb-2">
-          <input className="form-check-input" type="checkbox" checked={darkMode} onChange={(e) => setDarkMode(e.target.checked)} />
-          <label className="form-check-label">Enable Dark Mode</label>
-        </div>
       </div>
 
       <div className="card bg-dark border-0 p-3 mb-3 text-white">
@@ -252,7 +257,7 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
         </div>
       </div>
 
-      <button className="btn btn-primary btn-sm w-100 mb-3" onClick={savePreferences}>💾 Save All Changes</button>
+      <button className="btn btn-primary btn-sm w-100 mb-3" onClick={savePreferences}>Save All Changes</button>
 
       <div className="card bg-dark border-0 p-3 mb-3 text-white">
         <h6 className="fw-bold">Update Email / Password</h6>
@@ -266,16 +271,16 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
 
       <div className="card bg-dark border-0 p-3 mb-3 text-white">
         <h6 className="fw-bold">Data Management</h6>
-        <button className="btn btn-outline-light btn-sm w-100 mb-2" onClick={exportJSON}>📤 Export JSON</button>
-        <button className="btn btn-outline-light btn-sm w-100 mb-2" onClick={exportCSV}>📊 Export CSV</button>
+        <button className="btn btn-outline-light btn-sm w-100 mb-2" onClick={exportJSON}>Export JSON</button>
+        <button className="btn btn-outline-light btn-sm w-100 mb-2" onClick={exportCSV}>Export CSV</button>
         <button className="btn btn-outline-danger btn-sm w-100" onClick={confirmClear} disabled={clearing}>
-          {clearing ? "Clearing..." : "🗑 Clear All Meals"}
+          {clearing ? "Clearing..." : "Clear All Meals"}
         </button>
       </div>
 
       <div className="card bg-dark border-0 p-3 text-white">
         <h6 className="fw-bold">Account</h6>
-        <button className="btn btn-danger w-100 mt-2" onClick={onLogout}>🚪 Logout</button>
+        <button className="btn btn-danger w-100 mt-2" onClick={onLogout}>Logout</button>
       </div>
     </div>
   );

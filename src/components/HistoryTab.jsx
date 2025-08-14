@@ -95,8 +95,8 @@ function HistoryTab({ user, meals }) {
 
   return (
     <div className="home-container">
-      <h5 className="TitleName">History</h5>
-
+      <h5 className="TitleName mb-4">History</h5>
+      <div style={{display:'flex', justifyContent:'space-between', paddingBottom:'10px'}}>
       {/* 📅 Date Selector */}
       <div className="d-flex align-items-center gap-2 mb-2 DateRangePicker">
         <span style={{ cursor: 'pointer', marginRight: '10px' }} onClick={() => changeDateBy(-1)}>◀</span>
@@ -115,6 +115,7 @@ function HistoryTab({ user, meals }) {
       <div className="d-flex gap-2 mb-2">
         <button className="btn btn-outline-info btn-sm" onClick={() => exportMealsAsJSON(mealsForDate, selectedDate)}>Export JSON</button>
         <button className="btn btn-outline-info btn-sm" onClick={() => exportMealsAsCSV(mealsForDate, selectedDate)}>Export CSV</button>
+      </div>
       </div>
 
       {/* 🔍 Search Input */}
@@ -135,7 +136,7 @@ function HistoryTab({ user, meals }) {
       {/* If no meals for this date */}
       {mealsForDate.length === 0 ? (
         <div className="text-center text-white mt-4">
-          <p className="fw-bold">📅 No data available for {selectedDate}</p>
+          <p className="fw-bold">No data available for {selectedDate}</p>
           <p className="small ">Try selecting a different date or log a meal to see your history.</p>
         </div>
       ) : (

@@ -8,7 +8,15 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  getDoc
 } from "firebase/firestore";
+
+
+export const getUserProfile = async (uid) => {
+  const userRef = doc(db, "users", uid);
+  const snap = await getDoc(userRef);
+  return snap.exists() ? snap.data() : null;
+};
 
 // Add a meal
 export const saveMeal = async (mealData, userId) => {
