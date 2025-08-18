@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['logo192.png', 'logo512.png'],
+      includeAssets: ['Logo192.png', 'Logo512.png'],
       manifest: {
         name: 'KnowUrFood',
         short_name: 'KnowUrFood',
