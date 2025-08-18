@@ -150,28 +150,35 @@ const bmiPercent = Math.min((bmi / 40) * 100, 100); // scale to 100%
           <NutritionDonutChart meals={meals} selectedDate={selectedDate} />
         </div>
       </div>
+      {/* ✅ Only render FoodItemList if there are meals for today */}
+{meals.some(meal => meal.date === selectedDate) && (
+  <div className="FoodItemList bg-dark">
+    {(user.mealOrder || ["Breakfast", "Lunch", "Dinner"]).map((type) => {
+      const mealsOfType = getMealsByType(type);
+      if (mealsOfType.length === 0) return null;
 
-      <div className="FoodItemList bg-dark">
-        {(user.mealOrder || ["Breakfast", "Lunch", "Dinner"]).map((type) => (
-          <div key={type} className='mb-3'>
-            <p className="SubTitleName">{type}</p>
-            {getMealsByType(type).map((meal) =>
-              meal.foodItems.map((item, i) => (
-                <MealCard
-                  key={`${type}-${meal.id}-${i}`}
-                  name={item.name}
-                  nutrients={item.nutrients}
-                  kcal={meal.kcal || null}  // ✅ pass kcal to MealCard
-                  onEdit={() => onEditMeal(meal)}
-                  onDelete={() => onDeleteMeal(meal.id)}
-                  unit={user.unit || 'g'}
-                />
-              ))
-            )}
+      return (
+        <div key={type} className='mb-3'>
+          <p className="SubTitleName">{type}</p>
+          {mealsOfType.map((meal) =>
+            meal.foodItems.map((item, i) => (
+              <MealCard
+                key={`${type}-${meal.id}-${i}`}
+                name={item.name}
+                nutrients={item.nutrients}
+                kcal={meal.kcal || null}
+                onEdit={() => onEditMeal(meal)}
+                onDelete={() => onDeleteMeal(meal.id)}
+                unit={user.unit || 'g'}
+              />
+            ))
+          )}
+        </div>
+      );
+    })}
+  </div>
+)}
 
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

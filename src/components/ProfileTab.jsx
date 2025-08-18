@@ -83,34 +83,75 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
     link.click();
   };
 
-const exportCSV = () => {
+  const exportCSV = () => {
   if (!meals || meals.length === 0) {
     showToast("⚠️ No meals to export.", "warning");
     return;
   }
 
-  const rows = [["Date", "Meal Type", "Food Name", "Fat (g)", "Carbs (g)", "Protein (g)", "Quantity", "Unit"]];
+  // ✅ CSV header
+  const rows = [
+    [
+      "Date",
+      "Meal Type",
+      "Food Name",
+      "Calories (kcal)",
+      "Protein (g)",
+      "Fat (g)",
+      "Carbohydrate (g)",
+      "Sugar (g)",
+      "Fibre (g)",
+      "Salt (g)",
+      "Caffeine (mg)",
+      "Unit"
+    ]
+  ];
 
-  meals.forEach(meal => {
-    meal.foodItems.forEach(item => {
-      const fat = item.nutrients.find(n => n.type.toLowerCase() === 'fat')?.total || '';
-      const carbs = item.nutrients.find(n => n.type.toLowerCase() === 'carbohydrate')?.total || '';
-      const protein = item.nutrients.find(n => n.type.toLowerCase() === 'protein')?.total || '';
+  // ✅ Helper to get nutrient total by type
+  const getTotal = (item, type) => {
+    return (
+      item.nutrients.find(
+        (n) => n.type?.toLowerCase() === type.toLowerCase()
+      )?.total || ""
+    );
+  };
+
+  // ✅ Helper to always get calories (from meal.kcal OR calculate)
+  const getCalories = (meal, item) => {
+    if (meal.kcal) return meal.kcal;
+
+    let kcal = 0;
+    item.nutrients.forEach((n) => {
+      const c = parseFloat(n.total || 0);
+      if (n.type?.toLowerCase() === "fat") kcal += c * 9;
+      if (n.type?.toLowerCase() === "protein") kcal += c * 4;
+      if (n.type?.toLowerCase().includes("carbohydrate")) kcal += c * 4;
+    });
+    return Math.round(kcal);
+  };
+
+  meals.forEach((meal) => {
+    meal.foodItems.forEach((item) => {
+      const kcal = getCalories(meal, item);
 
       rows.push([
         meal.date,
         meal.mealType,
         item.name,
-        fat,
-        carbs,
-        protein,
-        item.quantity || '',
+        kcal,
+        getTotal(item, "protein"),
+        getTotal(item, "fat"),
+        getTotal(item, "carbohydrate"),
+        getTotal(item, "sugar"),
+        getTotal(item, "fibre"),
+        getTotal(item, "salt"),
+        getTotal(item, "caffeine"),
         unit
       ]);
     });
   });
 
-  const csvContent = rows.map(row => row.join(",")).join("\n");
+  const csvContent = rows.map((row) => row.join(",")).join("\n");
   const blob = new Blob([csvContent], { type: "text/csv" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);

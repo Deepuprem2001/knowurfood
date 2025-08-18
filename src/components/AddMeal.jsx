@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserMultiFormatReader } from '@zxing/library'; // NEW
+import { BrowserMultiFormatReader } from '@zxing/library'; 
 import WeightLogger from './WeightLogger';
-import { useToast } from '../contexts/ToastContext'; // adjust path if needed
+import { useToast } from '../contexts/ToastContext'; 
 import Tesseract from 'tesseract.js';
-import { parseNutritionFromText } from '../utils/mlparser'; // Adjust path if needed
+import { parseNutritionFromText } from '../utils/mlparser'; 
 
 
 function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {

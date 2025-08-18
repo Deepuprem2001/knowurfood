@@ -369,3 +369,39 @@ video {
   transform: translateY(10px);
   transition: all 200ms ease-in-out;
 }
+
+.bmi-icon {
+  font-size: 4rem;
+  transition: transform 0.4s ease, color 0.4s ease;
+}
+
+/* Colors by category */
+.bmi-icon.underweight,
+.bmi-badge.underweight {
+  color: #42a5f5; /* blue */
+}
+
+.bmi-icon.normal,
+.bmi-badge.normal {
+  color: #66bb6a; /* green */
+}
+
+.bmi-icon.overweight,
+.bmi-badge.overweight {
+  color: #ffa726; /* orange */
+}
+
+.bmi-icon.obese,
+.bmi-badge.obese {
+  color: #ef5350; /* red */
+}
+
+/* Fun pulse animation when BMI updates */
+.bmi-icon {
+  animation: pulse 1s ease;
+}
+@keyframes pulse {
+  0% { transform: scale(0.9); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}

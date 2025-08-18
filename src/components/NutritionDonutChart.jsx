@@ -79,6 +79,13 @@ function NutritionDonutChart({ meals, selectedDate }) {
     },
   };
 
+  if (mealsToday.length === 0) {
+    return (
+      <div className="text-white small text-center p-3" style={{marginTop:'30%'}}>
+        No nutrition data for today.
+      </div>
+    );
+  }
 
   return (
     <div className="donut-chart" style={{ position: 'relative' }}>

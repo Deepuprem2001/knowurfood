@@ -203,14 +203,25 @@ function AuthPage({ onLoginSuccess }) {
       case 2:
         return (
           <>
-            {/* All step 2 fields (personal details) */}
-            {/* Skipping repeating here for brevity — keep as is */}
+            <div className="form-row"><label>First Name</label><input type="text" className={`form-control ${fieldErrors.firstName ? 'is-invalid' : ''}`} value={firstName} onChange={(e) => setFirstName(e.target.value)} />{fieldErrors.firstName && <div className="text-danger">{fieldErrors.firstName}</div>}</div>
+            <div className="form-row"><label>Last Name</label><input type="text" className={`form-control ${fieldErrors.lastName ? 'is-invalid' : ''}`} value={lastName} onChange={(e) => setLastName(e.target.value)} />{fieldErrors.lastName && <div className="text-danger">{fieldErrors.lastName}</div>}</div>
+            <div className="form-row"><label>Age</label><input type="number" className={`form-control ${fieldErrors.age ? 'is-invalid' : ''}`} value={age} onChange={(e) => setAge(e.target.value)} />{fieldErrors.age && <div className="text-danger">{fieldErrors.age}</div>}</div>
+            <div className="form-row"><label>Gender</label><select className="form-control" value={gender} onChange={(e) => setGender(e.target.value)}><option value="male">Male</option><option value="female">Female</option></select></div>
+            <div className="form-row"><label>Current Weight (kg)</label><input type="number" className={`form-control ${fieldErrors.currentWeight ? 'is-invalid' : ''}`} value={currentWeight} onChange={(e) => setCurrentWeight(e.target.value)} />{fieldErrors.currentWeight && <div className="text-danger">{fieldErrors.currentWeight}</div>}</div>
+            <div className="form-row"><label>Height (cm)</label><input type="number" className={`form-control ${fieldErrors.height ? 'is-invalid' : ''}`} value={height} onChange={(e) => setHeight(e.target.value)} />{fieldErrors.height && <div className="text-danger">{fieldErrors.height}</div>}</div>
+            <div className="form-row"><label>Goal Weight (kg)</label><input type="number" className={`form-control ${fieldErrors.goalWeight ? 'is-invalid' : ''}`} value={goalWeight} onChange={(e) => setGoalWeight(e.target.value)} />{fieldErrors.goalWeight && <div className="text-danger">{fieldErrors.goalWeight}</div>}</div>
+            <div className="form-row"><label>Goal Date</label><input type="date" className={`form-control ${fieldErrors.goalDate ? 'is-invalid' : ''}`} value={goalDate} onChange={(e) => setGoalDate(e.target.value)} />{fieldErrors.goalDate && <div className="text-danger">{fieldErrors.goalDate}</div>}</div>
           </>
         );
       case 3:
         return (
           <>
-            {/* All step 3 fields (preferences, reminders) */}
+            <div className="form-row"><label>Calorie Goal</label><input type="number" className="form-control" value={calorieGoal} onChange={(e) => setCalorieGoal(e.target.value)} /></div>
+            <div className="form-row"><label>Meal Order</label><select className="form-control" value={mealOrder} onChange={(e) => setMealOrder(e.target.value)}><option value="Breakfast,Lunch,Dinner">Breakfast → Lunch → Dinner</option><option value="Dinner,Lunch,Breakfast">Dinner → Lunch → Breakfast</option></select></div>
+            <div className="form-row"><label>Preferred Unit</label><select className="form-control" value={unit} onChange={(e) => setUnit(e.target.value)}><option value="g">Grams</option><option value="mg">Milligrams</option><option value="kcal">Calories</option></select></div>
+            <div className="form-row"><label>Breakfast Time</label><input type="time" className="form-control" value={breakfastTime} onChange={(e) => setBreakfastTime(e.target.value)} /></div>
+            <div className="form-row"><label>Lunch Time</label><input type="time" className="form-control" value={lunchTime} onChange={(e) => setLunchTime(e.target.value)} /></div>
+            <div className="form-row"><label>Dinner Time</label><input type="time" className="form-control" value={dinnerTime} onChange={(e) => setDinnerTime(e.target.value)} /></div>
           </>
         );
       default:
