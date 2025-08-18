@@ -65,6 +65,15 @@ export const updateUserProfile = async (userId, updatedProfile) => {
 export const addWeightLog = async (userId, date, weight) => {
   const ref = doc(db, 'users', userId, 'weightLogs', date);
   await setDoc(ref, { date, weight });
+
+  const userRef = doc(db, 'users', userId);
+  const userSnap = await getDoc(userRef);
+  if (userSnap.exists()) {
+    const userData = userSnap.data();
+    const newXP = (userData.xp || 0) + 10;
+    const newLevel = Math.floor(newXP / 100) + 1;
+    await updateDoc(userRef, { xp: newXP, level: newLevel });
+  }
 };
 
 export const getWeightLogs = async (userId) => {

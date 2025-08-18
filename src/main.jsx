@@ -13,4 +13,3 @@ createRoot(document.getElementById('root')).render(
     </ToastProvider>
   </React.StrictMode>,
 )
-serviceWorkerRegistration.register();

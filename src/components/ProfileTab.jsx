@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getAuth, updateEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { updateUserProfile } from '../services/dbService';
 import { useToast } from '../contexts/ToastContext';
+import { Button, Modal } from 'bootstrap';
 
 function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
   const [firstName, setFirstName] = useState('');
@@ -27,6 +28,8 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
   const [updating, setUpdating] = useState(false);
 
   const { showToast } = useToast();
+
+  const [showHelp, setShowHelp] = useState(false);
 
   const level = user.level || 1;
   const xp = user.xp || 0;
@@ -319,10 +322,98 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
         </button>
       </div>
 
+      <div className="card bg-dark border-0 p-3 mb-3 text-white">
+        <button className="btn btn-info w-100 " onClick={() => setShowHelp(true)}><i className='bi bi-info-circle' style={{padding:'0 10px'}}></i>Help</button>
+      </div>
+
+
       <div className="card bg-dark border-0 p-3 text-white">
         <h6 className="fw-bold">Account</h6>
         <button className="btn btn-danger w-100 mt-2" onClick={onLogout}>Logout</button>
       </div>
+
+    {showHelp && (
+     <div className="modal-backdrop">
+      <div className="modal-container bg-dark text-white p-3 rounded">
+      <div className="modal-header mb-2 border-bottom">
+        <h5 className="TitleName">📖 How to use KnowUrFood</h5>
+      </div>
+
+      <div className="modal-body" style={{ maxHeight: "60vh", overflowY: "auto" }}>
+        
+        <h6>🍽️ 1. Adding a Meal</h6>
+        <p>There are three ways to log meals:</p>
+        <ul>
+          <li><b>Auto-Fill:</b> Type the food name (e.g., <i>“Boiled Egg”</i>) and the app will fetch nutrition data. Adjust serving size or number of servings, and values update automatically.</li>
+          <li><b>Barcode Scan:</b> Tap scan, point your camera at a product barcode, and nutrition details load instantly.</li>
+          <li><b>Manual:</b> Enter your own food name and nutrients (useful for homemade meals). Calories are auto-calculated from protein, fat, and carbs.</li>
+        </ul>
+
+        <h6>📋 2. Viewing Meals</h6>
+        <p>Your meals appear as <b>cards</b> on the Home screen.</p>
+        <ul>
+          <li>Swipe <b>left</b> to delete a meal.</li>
+          <li>Swipe <b>right</b> to edit it.</li>
+          <li>Each card shows the meal type, name, and main nutrients.</li>
+        </ul>
+
+        <h6>📊 3. Tracking Nutrition</h6>
+        <p>The app includes charts to help you monitor your diet:</p>
+        <ul>
+          <li><b>Calories Donut:</b> Shows your daily calorie distribution.</li>
+          <li><b>Bar Chart:</b> Compare meals across the week.</li>
+          <li><b>Nutrition Donut:</b> Balance of protein, carbs, fat, and more.</li>
+        </ul>
+
+        <h6>📅 4. History & Suggestions</h6>
+        <p>Use the History tab to revisit meals from past days. The Suggestions tab provides:</p>
+        <ul>
+          <li>Daily tips (e.g., <i>“Increase protein intake”</i>).</li>
+          <li>Weekly nutrient trends via line charts.</li>
+          <li>Comparisons with previous weeks.</li>
+        </ul>
+
+        <h6>👤 5. Profile & Preferences</h6>
+        <p>In Profile, you can:</p>
+        <ul>
+          <li>Set meal order (Breakfast → Dinner, etc.).</li>
+          <li>Change units (g, mg, kcal).</li>
+          <li>Toggle dark mode.</li>
+          <li>Export meals as <b>CSV</b> or <b>JSON</b>.</li>
+          <li>Clear all meals (with confirmation).</li>
+        </ul>
+
+        <h6>🎮 6. Rewards & Gamification</h6>
+        <ul>
+          <li>Earn <b>XP</b> every time you log a meal.</li>
+          <li>Level up as XP increases.</li>
+          <li>Unlock badges for daily streaks (5, 15, 30 days, etc.).</li>
+        </ul>
+
+        <h6>⚖️ 7. Weight Tracking</h6>
+        <ul>
+          <li>Log your weight daily in the Profile tab.</li>
+          <li>See your progress on a line chart.</li>
+          <li>Set a goal weight + target date — the app calculates daily calorie goals.</li>
+          <li>Earn special badges when you hit your goal.</li>
+        </ul>
+
+        <h6>⏰ 8. Meal Reminders</h6>
+        <ul>
+          <li>Set reminder times for Breakfast, Lunch, and Dinner in Preferences.</li>
+          <li>The app will send you notifications at those times.</li>
+        </ul>
+
+      </div>
+
+      <div className="modal-footer border-top">
+        <button className="btn btn-danger w-100" onClick={() => setShowHelp(false)}>Close</button>
+      </div>
+      </div>
+    </div>
+  )}
+
+
     </div>
   );
 }

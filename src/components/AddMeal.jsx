@@ -491,7 +491,7 @@ const resetModel = () => {
   {mode === 'weight' && (
     <div className='modal-backdrop'>
     <div className="modal-container bg-dark text-white p-4 text-center">
-      <WeightLogger user={user} />
+      <WeightLogger user={user} onClose={() => { resetModel(); onClose(); }}/>
       <div className="d-flex justify-content-end">
         <button className="btn btn-danger mt-2" onClick={() => { resetModel(); onClose(); }}>
           Close

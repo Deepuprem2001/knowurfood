@@ -6,7 +6,8 @@ import MealCard from './MealCard';
 import WeightLogger from './WeightLogger'; // ✅ NEW IMPORT
 import WeightLineChart from './WeightLineChart'; // ✅ NEW IMPORT
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
-import { getWeightLogs } from '../services/dbService';
+import { collection, doc, onSnapshot } from "firebase/firestore";
+import { db } from "../firebase";
 
 const getXPProgress = (xp) => {
   const level = Math.floor(xp / 100) + 1;
@@ -17,22 +18,33 @@ const getXPProgress = (xp) => {
 };
 
 function Home({ meals, onEditMeal, onDeleteMeal, user }) {
-  const { level, currentXP, nextXP, percent } = getXPProgress(user.xp || 0);
   const selectedDate = new Date().toISOString().split('T')[0];
-  const [latestWeight, setLatestWeight] = useState(user.currentWeight || null);
+  const [weightLogs, setWeightLogs] = useState([]);
+  const [liveUser, setLiveUser] = useState(user);
+  const { level, currentXP, nextXP, percent } = getXPProgress(liveUser?.xp || 0);
+
 
   useEffect(() => {
-  if (user?.uid) {
-    getWeightLogs(user.uid).then(logs => {
-      if (logs.length > 0) {
-        // assuming logs are sorted newest first; if not, sort by date
-        const mostRecent = [...logs].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-        setLatestWeight(mostRecent.weight);
-        }
-      });
+  if (!user?.uid) return;
+  const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
+    if (snap.exists()) {
+      setLiveUser(snap.data());
     }
-  }, [user]);
+  });
+  return () => unsub();
+}, [user]);
 
+
+
+useEffect(() => {
+  if (!user?.uid) return;
+  const ref = collection(db, "users", user.uid, "weightLogs");
+  const unsub = onSnapshot(ref, (snap) => {
+    const logs = snap.docs.map((d) => d.data());
+    setWeightLogs(logs);
+  });
+  return () => unsub();
+}, [user]);
 
   const getMealsByType = (type) => {
     return meals.filter((meal) => meal.mealType === type && meal.date === selectedDate);
@@ -71,8 +83,13 @@ const getBMICategory = (bmi) => {
   return 'Obese';
 };
 
-const bmi = calculateBMI(latestWeight, user.height);
+const latestWeight = weightLogs.length > 0 
+  ? weightLogs.sort((a,b) => new Date(b.date) - new Date(a.date))[0].weight 
+  : null;
+
+const bmi = calculateBMI(latestWeight, liveUser?.height);
 const bmiCategory = getBMICategory(bmi);
+
 const bmiPercent = Math.min((bmi / 40) * 100, 100); // scale to 100%
 
 
@@ -109,7 +126,7 @@ const bmiPercent = Math.min((bmi / 40) * 100, 100); // scale to 100%
         <CaloriesBarChart meals={meals} startOfWeek={startOfWeek} />
       </div>
 
-      <WeightLineChart user={user} />
+    <WeightLineChart user={user} logs={weightLogs} />
 
       {bmi && (
         <div className="card bg-dark text-white p-3 mb-3 shadow-sm text-center">

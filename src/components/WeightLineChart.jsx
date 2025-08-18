@@ -7,16 +7,9 @@ import { getWeightLogs } from '../services/dbService';
 
 ChartJS.register(LineElement, PointElement, LinearScale, TimeScale, Tooltip, Legend);
 
-function WeightLineChart({ user }) {
-  const [logs, setLogs] = useState([]);
+function WeightLineChart({ user, logs = [] }) {
 
-  useEffect(() => {
-    if (user?.uid) {
-      getWeightLogs(user.uid).then(setLogs);
-    }
-  }, [user]);
-
-  if (!user.goalDate || !user.goalWeight) return null;
+    if (!user.goalDate || !user.goalWeight) return null;
 
   const sorted = [...logs].sort((a, b) => new Date(a.date) - new Date(b.date));
 

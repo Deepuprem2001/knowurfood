@@ -105,14 +105,36 @@ function SuggestionsTab({ meals, user }) {
     checkProgress();
   }, [user]);
 
+  // Generate natural-language advice based on nutrient type
+  const getFriendlyAdvice = (type, avg, target) => {
+    const ratio = avg / target;
+
+    if (ratio < 0.6) {
+      if (type === "Protein") return " You're low on protein today — add eggs, chicken, or beans to boost it.";
+      if (type === "Fibre") return " Fibre intake is low — whole grains, fruits, and veggies can help.";
+      if (type === "Carbohydrate") return " Carbs are too low — try rice, bread, or oats for energy.";
+      if (type === "Fat") return " Healthy fats are low — nuts, avocado, or olive oil are good sources.";
+      return ` Your ${type} intake is low. Consider foods rich in ${type}.`;
+    } 
+    else if (ratio > 1.2) {
+      if (type === "Salt") return "⚠️ Salt intake is high — reduce processed foods and snacks.";
+      if (type === "Fat") return "⚠️ You're exceeding fat intake — cut down on fried foods.";
+      if (type === "Carbohydrate") return "⚠️ Too many carbs — balance with lean protein.";
+      if (type === "Sugar" || type.includes("Sugar")) return "⚠️ Sugar intake is high — cut back on sweets and sodas.";
+      return `⚠️ You're exceeding recommended ${type} levels.`;
+    }
+
+    return null; // no special advice
+  };
+
+
   const suggestions = [];
   Object.keys(nutrientTargets).forEach(type => {
     const avg = thisWeek[type] || 0;
     const diff = (thisWeek[type] || 0) - (lastWeek[type] || 0);
-    if (avg < 0.6 * nutrientTargets[type]) {
-      suggestions.push(`⬇️ Your ${type} intake is quite low this week. Consider improving it.`);
-    } else if (avg > 1.2 * nutrientTargets[type]) {
-      suggestions.push(`⚠️ You're exceeding recommended ${type} levels.`);
+    const advice = getFriendlyAdvice(type, avg, nutrientTargets[type]);
+    if (advice) {
+      suggestions.push(advice);
     } else if (diff > 5) {
       suggestions.push(`🔺 ${type} increased significantly this week.`);
     } else if (diff < -5) {

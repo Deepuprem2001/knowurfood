@@ -113,8 +113,8 @@ function HistoryTab({ user, meals }) {
 
       {/* 📤 Export Buttons */}
       <div className="d-flex gap-2 mb-2">
-        <button className="btn btn-outline-info btn-sm" onClick={() => exportMealsAsJSON(mealsForDate, selectedDate)}>Export JSON</button>
-        <button className="btn btn-outline-info btn-sm" onClick={() => exportMealsAsCSV(mealsForDate, selectedDate)}>Export CSV</button>
+        <button className="btn btn-outline-info btn-sm" style={{padding:'0 15px'}} onClick={() => exportMealsAsJSON(mealsForDate, selectedDate)}><i class="bi bi-filetype-json"></i></button>
+        <button className="btn btn-outline-info btn-sm" style={{padding:'0 15px'}} onClick={() => exportMealsAsCSV(mealsForDate, selectedDate)}><i class="bi bi-filetype-csv"></i></button>
       </div>
       </div>
 

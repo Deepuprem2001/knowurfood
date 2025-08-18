@@ -1,11 +1,12 @@
-// components/WeightLogger.jsx
 import React, { useState, useEffect } from 'react';
 import { addWeightLog, getWeightLogs } from '../services/dbService';
+import { useToast } from '../contexts/ToastContext';
 
-function WeightLogger({ user }) {
+function WeightLogger({ user, onWeightLogged, onClose }) {
   const [weight, setWeight] = useState('');
   const [logs, setLogs] = useState([]);
   const [today, setToday] = useState(new Date().toISOString().split('T')[0]);
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (user?.uid) {
@@ -16,9 +17,22 @@ function WeightLogger({ user }) {
   const handleSave = async () => {
     if (!weight || isNaN(weight)) return;
     await addWeightLog(user.uid, today, parseFloat(weight));
+
+    // refresh logs
     const updated = await getWeightLogs(user.uid);
     setLogs(updated);
+
+    // ✅ Toast + XP message
+    showToast("✅ Weight logged! +10 XP 🎉", "success");
+
+    // reset input
     setWeight('');
+
+    // notify parent so WeightLineChart updates instantly
+    if (onWeightLogged) onWeightLogged(updated);
+
+    // close modal if passed
+    if (onClose) onClose();
   };
 
   return (
@@ -39,11 +53,10 @@ function WeightLogger({ user }) {
           value={weight}
           onChange={(e) => setWeight(e.target.value)}
         />
-        <button className="btn btn-primary" onClick={handleSave}>
+        <button className="btn btn-primary" onClick={()=> {handleSave(); onClose()}}>
           Save
         </button>
       </div>
-
     </div>
   );
 }
