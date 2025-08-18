@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import CaloriesDonutChart from './CaloriesDonutChart';
 import NutritionDonutChart from './NutritionDonutChart';
 import { getWeightLogs } from '../services/dbService';
+import MealCard from './MealCard';
 
-function HistoryTab({ user, meals }) {
+function HistoryTab({ user, meals, onEditMeal, onDeleteMeal }) {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -179,15 +180,16 @@ function HistoryTab({ user, meals }) {
             <div key={i} className="FoodItemList">
               <h6 className="SubTitleName">{meal.mealType}</h6>
               {meal.foodItems.map((item, idx) => (
-                <div key={idx} className="card bg-dark text-white p-2 mb-2">
-                  <p className="fw-bold mb-1">{item.name}</p>
-                  <p className="mb-1">Calories: {item.kcal} kcal</p>
-                  {item.nutrients.map((n, ni) => (
-                    <p key={ni} className="mb-0">
-                      {n.type}: {n.total} {n.unit || 'g'}
-                    </p>
-                  ))}
-                </div>
+                <MealCard
+                  key={`${meal.id || i}-${idx}`}
+                  name={item.name}
+                  nutrients={item.nutrients}
+                  kcal={meal.kcal || null}   
+                  unit={user.unit || 'g'}
+                  disableSwipe={false}      
+                  onEdit={() => onEditMeal(meal)}
+                  onDelete={() => onDeleteMeal(meal.id)}
+                />
               ))}
             </div>
           ))}
