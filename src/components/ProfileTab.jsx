@@ -31,6 +31,8 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
 
   const [showHelp, setShowHelp] = useState(false);
 
+  const streak = user.streak || 0; // days streak
+
   const level = user.level || 1;
   const xp = user.xp || 0;
   const currentXP = xp % 100;
@@ -231,6 +233,30 @@ function ProfileTab({ user, meals, onLogout, clearAllMeals }) {
         <p>🍽️ Meals Logged: {totalMeals}</p>
         <p>📊 Avg Meals/Day: {avgMealsPerDay}</p>
       </div>
+
+      <div className="card bg-dark border-0 p-3 mb-3 text-white text-center">
+
+          {streak > 0 ? (
+            <>
+              <div style={{ fontSize: "3rem", color: streak >= 7 ? "red" : "orange" }}>
+                🔥
+              </div>
+              <p className="fw-bold">{streak}-day streak</p>
+              <small className="text-white">
+                {streak >= 7
+                  ? "Amazing consistency! Keep it up!"
+                  : "Log meals daily to grow your fire!"}
+              </small>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: "3rem", color: "gray" }}>🔥</div>
+              <p className="text-white mb-0">No active streak</p>
+              <small className="text-white">Start logging meals to ignite your fire!</small>
+            </>
+          )}
+        </div>
+
 
       <div className="card bg-dark border-0 p-3 mb-3 shadow-sm text-white">
         <h6 className="fw-bold">Your Rewards</h6>
