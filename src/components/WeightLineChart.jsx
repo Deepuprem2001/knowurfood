@@ -97,7 +97,7 @@ function WeightLineChart({ user, logs = [] }) {
       <h6 className="fw-bold mb-2 SubTitleName">Weight Progress</h6>
 
       {/* Single Date Range Picker + Buttons */}
-      <div className="d-flex align-items-center gap-4 mb-3">
+      <div className="d-flex align-items-center gap-3 mb-3">
         <DatePicker
           selectsRange
           startDate={dateRange[0]}
