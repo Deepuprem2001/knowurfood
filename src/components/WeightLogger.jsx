@@ -3,9 +3,16 @@ import { addWeightLog, getWeightLogs } from '../services/dbService';
 import { useToast } from '../contexts/ToastContext';
 
 function WeightLogger({ user, onWeightLogged, onClose }) {
+  const formatLocalDate = (d) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`; // YYYY-MM-DD
+  };
+
   const [weight, setWeight] = useState('');
   const [logs, setLogs] = useState([]);
-  const [today, setToday] = useState(new Date().toISOString().split('T')[0]);
+  const [today, setToday] = useState(formatLocalDate(new Date()));
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -43,7 +50,7 @@ function WeightLogger({ user, onWeightLogged, onClose }) {
           type="date"
           className="form-control"
           value={today}
-          max={new Date().toISOString().split('T')[0]}
+          max={formatLocalDate(new Date())}
           onChange={(e) => setToday(e.target.value)}
         />
         <input

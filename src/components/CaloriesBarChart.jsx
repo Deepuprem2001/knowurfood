@@ -5,12 +5,13 @@ import { Chart as ChartJS, BarElement, CategoryScale, LinearScale } from 'chart.
 ChartJS.register(BarElement, CategoryScale, LinearScale);
 
 function CaloriesBarChart({ meals, startOfWeek }) {
+  const formatLocalDate = (date) => date.toLocaleDateString("en-CA");
   const getWeekDates = () => {
     const days = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date(startOfWeek);
       d.setDate(startOfWeek.getDate() + i);
-      days.push(d.toISOString().split('T')[0]);
+      days.push(formatLocalDate(d));
     }
     return days;
   };

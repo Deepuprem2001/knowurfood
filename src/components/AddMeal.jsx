@@ -49,6 +49,12 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
     'Fibre', 'Fiber', 'Salt', 'Caffeine'
   ];
 
+  // YYYY-MM-DD in local time
+  const formatLocalDate = (date) => {
+    return date.toLocaleDateString("en-CA"); 
+  };
+
+
   // If editing an existing meal, preload fields
   useEffect(() => {
     if (editMeal) {
@@ -136,7 +142,7 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
 
     const mealData = {
       mealType,
-      date: mealDate.toISOString().split('T')[0],
+      date: formatLocalDate(mealDate),
       timestamp: mealDate.toISOString(),
       foodItems,
       kcal: scannedKcal || calculateCalories(foodItems),
@@ -312,9 +318,9 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
               <input
                 type="date"
                 className="form-control"
-                value={mealDate.toISOString().split('T')[0]}
+                value={formatLocalDate(mealDate)}
                 onChange={(e) => setMealDate(new Date(e.target.value))}
-                max={new Date().toISOString().split('T')[0]}
+                max={formatLocalDate(new Date())}
                 style={{ width: '30%' }}
               />
             </div>

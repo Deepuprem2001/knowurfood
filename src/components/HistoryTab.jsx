@@ -5,9 +5,16 @@ import { getWeightLogs } from '../services/dbService';
 import MealCard from './MealCard';
 
 function HistoryTab({ user, meals, onEditMeal, onDeleteMeal }) {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
-  const [searchQuery, setSearchQuery] = useState('');
+  
+  const formatLocalDate = (d) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`; // YYYY-MM-DD
+  };
 
+  const [selectedDate, setSelectedDate] = useState(formatLocalDate(new Date()));
+  const [searchQuery, setSearchQuery] = useState('');
   const mealsForDate = meals.filter(meal => meal.date === selectedDate);
   const [weightLogs, setWeightLogs] = useState([]);
 
@@ -26,7 +33,7 @@ function HistoryTab({ user, meals, onEditMeal, onDeleteMeal }) {
 
     if (newDate > today) return; // prevent going past today
 
-    setSelectedDate(newDate.toISOString().split("T")[0]);
+    setSelectedDate(formatLocalDate(newDate));
   };
 
 
@@ -105,7 +112,7 @@ function HistoryTab({ user, meals, onEditMeal, onDeleteMeal }) {
           type="date"
           className="form-control"
           value={selectedDate}
-          max={new Date().toISOString().split("T")[0]}
+          max={formatLocalDate(new Date())}
           onChange={(e) => setSelectedDate(e.target.value)}
           style={{ maxWidth: '150px' }}
         />
@@ -114,8 +121,8 @@ function HistoryTab({ user, meals, onEditMeal, onDeleteMeal }) {
 
       {/* 📤 Export Buttons */}
       <div className="d-flex gap-2 mb-2">
-        <button className="btn btn-outline-info btn-sm" style={{padding:'0 15px'}} onClick={() => exportMealsAsJSON(mealsForDate, selectedDate)}><i class="bi bi-filetype-json"></i></button>
-        <button className="btn btn-outline-info btn-sm" style={{padding:'0 15px'}} onClick={() => exportMealsAsCSV(mealsForDate, selectedDate)}><i class="bi bi-filetype-csv"></i></button>
+        <button className="btn btn-outline-info btn-sm" style={{padding:'0 15px'}} onClick={() => exportMealsAsJSON(mealsForDate, selectedDate)}><i className="bi bi-filetype-json"></i></button>
+        <button className="btn btn-outline-info btn-sm" style={{padding:'0 15px'}} onClick={() => exportMealsAsCSV(mealsForDate, selectedDate)}><i className="bi bi-filetype-csv"></i></button>
       </div>
       </div>
 
