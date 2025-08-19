@@ -42,7 +42,7 @@ function AddMealModal({ isOpen, onClose, onSave, editMeal, user }) {
   useEffect(() => {
     if (editMeal) {
       stopScan();
-      setMode(null);
+      setMode('meal');
       setMealType(editMeal.mealType);
       setMealDate(new Date(editMeal.timestamp));
       setFoodNames(editMeal.foodItems.map(f => f.name));
