@@ -355,27 +355,6 @@ const resetModel = () => {
 
 
   if (!isOpen) return null;
-  if (mode === null) {
-  return (
-    <div className="modal-backdrop">
-      <div className="modal-container bg-dark text-white p-4 text-center">
-        <h5 className="mb-3">What would you like to log?</h5>
-        <div className="d-flex flex-column gap-2">
-          <button className="btn btn-primary" onClick={() => setMode('meal')}>
-            Log Meal
-          </button>
-          <button className="btn btn-outline-light" onClick={() => setMode('weight')}>
-            Log Weight
-          </button>
-          <button className="btn btn-danger mt-2" onClick={() => { resetModel(); onClose(); }}>
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 
   return (
   <>
@@ -385,12 +364,12 @@ const resetModel = () => {
           <h5 className="mb-3">What would you like to log?</h5>
           <div className="d-flex flex-column gap-2">
             <button className="btn btn-primary" onClick={() => setMode('meal')}>
-              ➕ Log Meal
+              Log Meal
             </button>
-            <button className="btn btn-outline-light" onClick={() => setMode('weight')}>
-              ⚖️ Log Weight
+            <button className="btn btn-outline-primary" style={{color:'white'}} onClick={() => setMode('weight')}>
+              Log Weight
             </button>
-            <button className="btn btn-secondary mt-2" onClick={() => { resetModel(); onClose(); }}>
+            <button className="btn btn-danger mt-2" onClick={() => { resetModel(); onClose(); }}>
               Cancel
             </button>
           </div>
